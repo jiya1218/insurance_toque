@@ -1,0 +1,52 @@
+"use client"
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+
+export default function Header() {
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut()
+      router.push('/login') // Redirect to login page after logout
+    } catch (error) {
+      console.error('Error logging out:', error)
+    }
+  }
+
+  return (
+    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 z-20">
+      <div className="flex items-center gap-4 flex-1">
+        <div className="relative w-full max-w-md hidden md:block">
+          <input 
+            type="text" 
+            placeholder="Search policies, leads..." 
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors relative">
+          🔔
+          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+        </button>
+        <div className="h-8 w-px bg-gray-200 mx-2"></div>
+        <div className="flex items-center gap-4">
+          <button className="flex items-center gap-2 p-1 pr-3 hover:bg-gray-100 rounded-full transition-colors">
+            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white">
+              👤
+            </div>
+            <span className="text-sm font-medium text-gray-700 hidden sm:inline">Admin</span>
+          </button>
+          <button 
+            onClick={handleLogout}
+            className="text-sm font-semibold text-red-600 hover:text-red-700 px-3 py-1 hover:bg-red-50 rounded-lg transition-all"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+    </header>
+  )
+}
