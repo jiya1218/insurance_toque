@@ -25,8 +25,7 @@ export default function QuotationsPage() {
 
   const handleShare = async (id: string) => {
     try {
-      if (!res.ok) throw new Error('Failed to generate share link')
-      const { shareUrl } = await res.json()
+      const { shareUrl } = await fetchApi(`/api/v1/quotations/${id}/share`, { method: 'POST' })
       
       // Copy to clipboard
       await navigator.clipboard.writeText(shareUrl)
@@ -35,8 +34,8 @@ export default function QuotationsPage() {
       // Optional: Open WhatsApp
       const waUrl = `https://wa.me/?text=${encodeURIComponent('Here is your insurance quotation: ' + shareUrl)}`
       window.open(waUrl, '_blank')
-    } catch (error) {
-      alert('Failed to share quotation')
+    } catch (error: any) {
+      alert(error.message || 'Failed to share quotation')
     }
   }
 

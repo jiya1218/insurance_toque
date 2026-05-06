@@ -46,17 +46,14 @@ export default function LeadsPage() {
       const result = await fetchApi('/api/v1/leads/import', {
         method: 'POST',
         body: formData,
-        headers: {} // fetchApi will handle auth, but we don't want Content-Type: json for FormData
+        headers: {} // fetchApi will handle auth
       })
-      if (res.ok) {
-        setImportResult(result.stats)
-        alert(`Imported ${result.stats.assignedCount} leads successfully!`)
-        fetchData()
-      } else {
-        alert(result.error || 'Import failed')
-      }
-    } catch (err) {
-      alert('Failed to import leads.')
+      
+      setImportResult(result.stats)
+      alert(`Imported ${result.stats.assignedCount} leads successfully!`)
+      fetchData()
+    } catch (err: any) {
+      alert(err.message || 'Import failed')
     } finally {
       setImporting(false)
     }
