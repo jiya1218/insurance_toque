@@ -1,8 +1,12 @@
 import { Slot, useRouter, useSegments, useRootNavigationState } from 'expo-router';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
+import * as SplashScreen from 'expo-splash-screen';
 import { supabase } from '../src/lib/supabase';
 import { useAuthStore } from '../src/store/authStore';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   const { session, setSession, setLoading, fetchProfile, setUserProfile, isPinAuthenticated } = useAuthStore();
@@ -17,11 +21,17 @@ export default function RootLayout() {
     }, 2000);
 
     // 1. Check for an existing session on app launch
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      clearTimeout(timeoutId);
-      setLoading(false);
-    });
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        setSession(session);
+        setLoading(false);
+        SplashScreen.hideAsync().catch(() => {});
+      })
+      .catch((err) => {
+        console.error('Supabase Session Error:', err);
+        setLoading(false);
+        SplashScreen.hideAsync().catch(() => {});
+      });
 
     // 2. Listen for auth state changes (login / logout / token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
