@@ -39,8 +39,8 @@ export default function LoansScreen() {
             <View style={styles.card}>
               <View style={styles.cardTop}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.cardName}>{item.customer_name}</Text>
-                  <Text style={styles.cardMeta}>{item.loan_type} loan · {item.customer_phone}</Text>
+                  <Text style={styles.cardName}>{item.customerName || item.customer_name}</Text>
+                  <Text style={styles.cardMeta}>{(item.loanType || item.loan_type)} loan · {item.customerPhone || item.customer_phone}</Text>
                 </View>
                 <View style={[styles.badge, { backgroundColor: sc.bg }]}><Text style={[styles.badgeText, { color: sc.text }]}>{item.status}</Text></View>
               </View>
@@ -55,11 +55,11 @@ export default function LoansScreen() {
                 </View>
                 <View>
                   <Text style={styles.loanLabel}>Rate</Text>
-                  <Text style={styles.loanValue}>{item.interest_rate}%</Text>
+                  <Text style={styles.loanValue}>{item.interestRate || item.interest_rate}%</Text>
                 </View>
                 <View>
                   <Text style={styles.loanLabel}>Tenure</Text>
-                  <Text style={styles.loanValue}>{item.tenure} mo</Text>
+                  <Text style={styles.loanValue}>{item.tenureMonths || item.tenure} mo</Text>
                 </View>
               </View>
             </View>

@@ -38,12 +38,12 @@ export default function FitnessScreen() {
           return (
             <View style={styles.card}>
               <View style={styles.cardTop}>
-                <View style={{ flex: 1 }}><Text style={styles.cardName}>{item.customer_name}</Text><Text style={styles.cardMeta}>{item.vehicle_number} · {item.vehicle_type}</Text></View>
+                <View style={{ flex: 1 }}><Text style={styles.cardName}>{item.customerName || item.customer_name}</Text><Text style={styles.cardMeta}>{item.vehicleNumber || item.vehicle_number} · {item.vehicleType || item.vehicle_type}</Text></View>
                 <View style={[styles.badge, { backgroundColor: sc.bg }]}><Text style={[styles.badgeText, { color: sc.text }]}>{item.status?.replace(/_/g, ' ')}</Text></View>
               </View>
               <View style={styles.cardBottom}>
-                <Text style={styles.cardDate}>{item.center_name}</Text>
-                <Text style={styles.cardDate}>Test: {item.test_date}</Text>
+                <Text style={styles.cardDate}>{item.centerName || item.center_name}</Text>
+                <Text style={styles.cardDate}>Test: {item.testDate || item.test_date}</Text>
               </View>
             </View>
           );

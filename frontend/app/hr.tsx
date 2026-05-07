@@ -38,14 +38,14 @@ export default function HRScreen() {
           return (
             <View style={styles.card}>
               <View style={styles.cardRow}>
-                <View style={styles.avatar}><Text style={styles.avatarText}>{item.name?.charAt(0)}</Text></View>
+                <View style={styles.avatar}><Text style={styles.avatarText}>{(item.fullName || item.name || '?').charAt(0)}</Text></View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.cardName}>{item.name}</Text>
-                  <Text style={styles.cardMeta}>{item.role} · {item.department}</Text>
+                  <Text style={styles.cardName}>{item.fullName || item.name}</Text>
+                  <Text style={styles.cardMeta}>{item.role?.name || item.role || 'No Role'} · {item.department || 'General'}</Text>
                   <Text style={styles.cardMeta}>{item.email} · {item.phone}</Text>
                 </View>
                 <View>
-                  <View style={[styles.badge, { backgroundColor: sc.bg }]}><Text style={[styles.badgeText, { color: sc.text }]}>{item.status}</Text></View>
+                  <View style={[styles.badge, { backgroundColor: sc.bg }]}><Text style={[styles.badgeText, { color: sc.text }]}>{item.status || 'Active'}</Text></View>
                   <Text style={styles.salary}>₹{(item.salary || 0).toLocaleString()}/mo</Text>
                 </View>
               </View>

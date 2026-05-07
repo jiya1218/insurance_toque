@@ -54,7 +54,7 @@ export default function QuotationsScreen() {
               <View style={styles.cardBottom}>
                 <View><Text style={styles.lbl}>Amount</Text><Text style={styles.val}>₹{Number(item.amount || 0).toLocaleString()}</Text></View>
                 <View><Text style={styles.lbl}>Status</Text><Text style={styles.val}>{item.status}</Text></View>
-                <View><Text style={styles.lbl}>Lead ID</Text><Text style={styles.val}>{item.lead_id ? item.lead_id.substring(0, 8) + '…' : '—'}</Text></View>
+                <View><Text style={styles.lbl}>Lead ID</Text><Text style={styles.val}>{item.leadId || item.lead_id ? (item.leadId || item.lead_id).substring(0, 8) + '…' : '—'}</Text></View>
               </View>
             </View>
           );

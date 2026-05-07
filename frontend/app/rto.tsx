@@ -38,12 +38,12 @@ export default function RTOScreen() {
           return (
             <View style={styles.card}>
               <View style={styles.cardTop}>
-                <View style={{ flex: 1 }}><Text style={styles.cardName}>{item.customer_name}</Text><Text style={styles.cardMeta}>{item.vehicle_number} · {item.work_type?.replace(/_/g, ' ')}</Text></View>
+                <View style={{ flex: 1 }}><Text style={styles.cardName}>{item.customerName || item.customer_name}</Text><Text style={styles.cardMeta}>{item.vehicleNumber || item.vehicle_number} · {(item.workType || item.work_type)?.replace(/_/g, ' ')}</Text></View>
                 <View style={[styles.badge, { backgroundColor: sc.bg }]}><Text style={[styles.badgeText, { color: sc.text }]}>{item.status?.replace(/_/g, ' ')}</Text></View>
               </View>
               <View style={styles.cardBottom}>
                 <Text style={styles.amount}>₹{(item.fees || 0).toLocaleString()}</Text>
-                <Text style={styles.cardDate}>{item.due_date ? `Due: ${item.due_date}` : ''}</Text>
+                <Text style={styles.cardDate}>{item.dueDate || item.due_date ? `Due: ${item.dueDate || item.due_date}` : ''}</Text>
               </View>
             </View>
           );
