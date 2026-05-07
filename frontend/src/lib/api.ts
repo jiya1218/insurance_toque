@@ -2,11 +2,14 @@ import { Platform } from 'react-native';
 import axios from 'axios';
 import { supabase } from './supabase';
 
+// Hardcoded for production builds — env vars are NOT available inside APKs
+const LIVE_API_URL = 'https://insurance-toque-admin-panel.vercel.app/api/v1';
+
 const getApiUrl = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return 'http://localhost:3000/api/v1';
   }
-  return process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+  return process.env.EXPO_PUBLIC_API_URL || LIVE_API_URL;
 };
 
 const API_URL = getApiUrl();
