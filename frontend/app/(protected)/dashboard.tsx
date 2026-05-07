@@ -44,12 +44,13 @@ export default function DashboardScreen() {
     { name: 'Claims', icon: 'document-text', color: '#f59e0b', route: '/claims' },
     { name: 'Visits', icon: 'location', color: '#f43f5e', route: '/visits' },
     { name: 'RTO', icon: 'car', color: '#ef4444', route: '/rto' },
-    { name: 'Fitness', icon: 'fitness', color: '#14b8a6', route: '/fitness' },
+    { name: 'Fitness', icon: 'fitness', color: '#06b6d4', route: '/fitness' },
     { name: 'Quotations', icon: 'clipboard', color: '#6366f1', route: '/quotations' },
-    { name: 'HR', icon: 'people-circle', color: '#a855f7', route: '/hr' },
-    { name: 'Loans', icon: 'cash', color: '#f97316', route: '/loans' },
-    { name: 'Users', icon: 'settings', color: '#64748b', route: '/users' },
-    { name: 'Settings', icon: 'cog', color: '#475569', route: '/settings' },
+    { name: 'HR', icon: 'people-circle', color: '#ec4899', route: '/hr' },
+    { name: 'Loans', icon: 'cash', color: '#84cc16', route: '/loans' },
+    { name: 'Users', icon: 'person', color: '#14b8a6', route: '/users' },
+    { name: 'Settings', icon: 'settings', color: '#94a3b8', route: '/settings' },
+    { name: 'Alerts', icon: 'notifications', color: '#f97316', route: '/(protected)/notifications' },
   ];
 
   return (

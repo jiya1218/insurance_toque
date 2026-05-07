@@ -6,18 +6,6 @@ import { Colors, Spacing, FontSize, BorderRadius } from '../src/utils/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 
-function getStatusStyle(status: string) {
-  const color = status === 'completed' ? Colors.success : status === 'in_progress' ? '#A21CAF' : Colors.primary;
-  return {
-    backgroundColor: color + '15',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: color + '30',
-  };
-}
-
 export default function VisitsScreen() {
   const router = useRouter();
   const [items, setItems] = useState<any[]>([]);
@@ -75,10 +63,17 @@ export default function VisitsScreen() {
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <View style={getStatusStyle(item.status)}>
-                <Text style={styles.statusText}>{item.status?.toUpperCase()}</Text>
+              <View style={{
+                backgroundColor: item.status === 'completed' ? Colors.success + '15' : item.status === 'in_progress' ? '#A21CAF15' : Colors.primary + '15',
+                paddingHorizontal: Spacing.sm,
+                paddingVertical: 2,
+                borderRadius: 4,
+                borderWidth: 1,
+                borderColor: item.status === 'completed' ? Colors.success + '30' : item.status === 'in_progress' ? '#A21CAF30' : Colors.primary + '30'
+              }}>
+                <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
               </View>
-              <Text style={styles.time}>{item.scheduledAt ? new Date(item.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</Text>
+              <Text style={styles.time}>{new Date(item.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
             </View>
 
             <Text style={styles.purpose}>{item.purpose}</Text>
