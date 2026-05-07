@@ -2,81 +2,60 @@ import { Slot, useRouter, useSegments, useRootNavigationState } from 'expo-route
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
-import { supabase } from '../src/lib/supabase';
-import { useAuthStore } from '../src/store/authStore';
+import { AuthProvider, useAuth } from '../src/context/AuthContext';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-export default function RootLayout() {
-  const { session, setSession, setLoading, fetchProfile, setUserProfile, isPinAuthenticated } = useAuthStore();
+function RootLayoutNav() {
+  const { user, isLoading, isPinAuthenticated, setPinAuthenticated } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const navigationState = useRootNavigationState();
 
   useEffect(() => {
-    // Safety timeout: stop the spinner after 2 seconds no matter what
-    const timeoutId = setTimeout(() => {
-      setLoading(false);
-    }, 2000);
+    if (!isLoading) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [isLoading]);
 
-    // 1. Check for an existing session on app launch
-    supabase.auth.getSession()
-      .then(({ data: { session } }) => {
-        setSession(session);
-        setLoading(false);
-        SplashScreen.hideAsync().catch(() => {});
-      })
-      .catch((err) => {
-        console.error('Supabase Session Error:', err);
-        setLoading(false);
-        SplashScreen.hideAsync().catch(() => {});
-      });
-
-    // 2. Listen for auth state changes (login / logout / token refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-
-      if (session) {
-        // After login: fetch user profile (role + permissions) from FastAPI
-        fetchProfile();
-      } else {
-        // After logout: clear the profile
-        setUserProfile(null);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeoutId);
-    };
-  }, [setLoading, setSession, fetchProfile, setUserProfile]);
-
-  // Route guard: redirect based on session state and PIN authentication
+  // Route guard: redirect based on auth state
   useEffect(() => {
-    // 1. Wait until navigation state is initialized
-    if (!navigationState?.key) return;
+    // Wait until navigation state is initialized and loading is done
+    if (!navigationState?.key || isLoading) return;
 
-    // 2. Use a small timeout to ensure Slot is mounted
     const timer = setTimeout(() => {
-      const isWeb = Platform.OS === 'web';
-      const inProtectedGroup = segments[0] === '(protected)';
-      const inPinAuth = segments[0] === 'pin-auth';
+      try {
+        const isWeb = Platform.OS === 'web';
+        const inProtectedGroup = segments[0] === '(protected)';
+        const inPinAuth = segments[0] === 'pin-auth';
+        const inLogin = !segments[0] || segments[0] === 'login' || segments[0] === 'index';
 
-      if (!session && inProtectedGroup) {
-        router.replace('/login');
-      } else if (session && !isPinAuthenticated && !inPinAuth && !isWeb) {
-        // If logged in but PIN not verified yet, force PIN screen (SKIP ON WEB)
-        router.replace('/pin-auth');
-      } else if (session && (isPinAuthenticated || isWeb) && !inProtectedGroup) {
-        // If fully authenticated or on web, go to dashboard
-        router.replace('/(protected)/dashboard');
+        if (!user && inProtectedGroup) {
+          // Not logged in but trying to access protected routes
+          router.replace('/');
+        } else if (user && !isPinAuthenticated && !inPinAuth && !isWeb) {
+          // Logged in but PIN not verified yet (mobile only)
+          router.replace('/pin-auth');
+        } else if (user && (isPinAuthenticated || isWeb) && inLogin) {
+          // Fully authenticated, redirect to dashboard
+          router.replace('/(protected)/dashboard');
+        }
+      } catch (err) {
+        console.warn('Route guard error:', err);
       }
-    }, 1);
+    }, 100);
 
     return () => clearTimeout(timer);
-  }, [session, isPinAuthenticated, segments, navigationState?.key, router]);
+  }, [user, isPinAuthenticated, segments, navigationState?.key, isLoading, router]);
 
   return <Slot />;
 }
 
+export default function RootLayout() {
+  return (
+    <AuthProvider>
+      <RootLayoutNav />
+    </AuthProvider>
+  );
+}

@@ -5,11 +5,11 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, FontSize } from '../src/utils/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '../src/store/authStore';
+import { useAuth } from '../src/context/AuthContext';
 
 export default function PinLoginScreen() {
   const router = useRouter();
-  const { setPinAuthenticated } = useAuthStore();
+  const { setPinAuthenticated } = useAuth();
   const [pin, setPin] = useState('');
   const [storedPin, setStoredPin] = useState<string | null>(null);
 
@@ -29,7 +29,6 @@ export default function PinLoginScreen() {
         }
       }
     } catch (err) {
-      // Biometric failed — user can still use PIN
       console.warn('Biometric auth failed:', err);
     }
   }, [router, setPinAuthenticated]);
@@ -39,11 +38,9 @@ export default function PinLoginScreen() {
       const p = await SecureStore.getItemAsync('user_pin');
       setStoredPin(p);
       if (p) {
-        // Auto-trigger biometric if available
         handleBiometric();
       }
     } catch (err) {
-      // SecureStore failed — user can still set/enter PIN manually
       console.warn('SecureStore read failed:', err);
     }
   }, [handleBiometric]);
@@ -73,7 +70,6 @@ export default function PinLoginScreen() {
           setPin('');
         }
       } else {
-        // Setup mode
         await SecureStore.setItemAsync('user_pin', enteredPin);
         Alert.alert('PIN Set', 'Your security PIN has been saved.');
         setPinAuthenticated(true);
@@ -81,7 +77,6 @@ export default function PinLoginScreen() {
       }
     } catch (err) {
       console.warn('PIN verification error:', err);
-      // Fallback: just let them in
       setPinAuthenticated(true);
       router.replace('/(protected)/dashboard');
     }
