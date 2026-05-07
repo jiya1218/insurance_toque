@@ -1,6 +1,8 @@
+import 'react-native-gesture-handler';
 import { Slot, useRouter, useSegments, useRootNavigationState } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, ScrollView, Alert } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 
@@ -72,7 +74,6 @@ function RootLayoutNav() {
         }
       } catch (err) {
         console.warn('Navigation error:', err);
-        Alert.alert('Navigation Error', String(err));
       }
     }, 200);
 
@@ -84,10 +85,12 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <ErrorBoundary>
-      <AuthProvider>
-        <RootLayoutNav />
-      </AuthProvider>
-    </ErrorBoundary>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ErrorBoundary>
+        <AuthProvider>
+          <RootLayoutNav />
+        </AuthProvider>
+      </ErrorBoundary>
+    </GestureHandlerRootView>
   );
 }
