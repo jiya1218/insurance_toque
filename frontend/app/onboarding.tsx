@@ -11,11 +11,13 @@ import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../src/lib/supabase';
 import { Colors, Spacing, FontSize, BorderRadius } from '../src/utils/theme';
 
+const LIVE_BASE_URL = 'https://insurance-toque-admin-panel.vercel.app';
+
 const getBaseUrl = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return 'http://localhost:3000';
   }
-  return (process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000').replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+  return (process.env.EXPO_PUBLIC_API_URL || LIVE_BASE_URL + '/api/v1').replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 };
 
 const BASE_URL = getBaseUrl();

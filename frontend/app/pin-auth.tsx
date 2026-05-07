@@ -14,27 +14,37 @@ export default function PinLoginScreen() {
   const [storedPin, setStoredPin] = useState<string | null>(null);
 
   const handleBiometric = useCallback(async () => {
-    const hasHardware = await LocalAuthentication.hasHardwareAsync();
-    const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-    
-    if (hasHardware && isEnrolled) {
-      const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Login with Biometrics',
-        fallbackLabel: 'Use PIN',
-      });
-      if (result.success) {
-        setPinAuthenticated(true);
-        router.replace('/(protected)/dashboard');
+    try {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      
+      if (hasHardware && isEnrolled) {
+        const result = await LocalAuthentication.authenticateAsync({
+          promptMessage: 'Login with Biometrics',
+          fallbackLabel: 'Use PIN',
+        });
+        if (result.success) {
+          setPinAuthenticated(true);
+          router.replace('/(protected)/dashboard');
+        }
       }
+    } catch (err) {
+      // Biometric failed — user can still use PIN
+      console.warn('Biometric auth failed:', err);
     }
   }, [router, setPinAuthenticated]);
 
   const checkPin = useCallback(async () => {
-    const p = await SecureStore.getItemAsync('user_pin');
-    setStoredPin(p);
-    if (p) {
-      // Auto-trigger biometric if available
-      handleBiometric();
+    try {
+      const p = await SecureStore.getItemAsync('user_pin');
+      setStoredPin(p);
+      if (p) {
+        // Auto-trigger biometric if available
+        handleBiometric();
+      }
+    } catch (err) {
+      // SecureStore failed — user can still set/enter PIN manually
+      console.warn('SecureStore read failed:', err);
     }
   }, [handleBiometric]);
 
@@ -53,18 +63,25 @@ export default function PinLoginScreen() {
   };
 
   const verifyPin = useCallback(async (enteredPin: string) => {
-    if (storedPin) {
-      if (enteredPin === storedPin) {
+    try {
+      if (storedPin) {
+        if (enteredPin === storedPin) {
+          setPinAuthenticated(true);
+          router.replace('/(protected)/dashboard');
+        } else {
+          Alert.alert('Incorrect PIN', 'Please try again.');
+          setPin('');
+        }
+      } else {
+        // Setup mode
+        await SecureStore.setItemAsync('user_pin', enteredPin);
+        Alert.alert('PIN Set', 'Your security PIN has been saved.');
         setPinAuthenticated(true);
         router.replace('/(protected)/dashboard');
-      } else {
-        Alert.alert('Incorrect PIN', 'Please try again.');
-        setPin('');
       }
-    } else {
-      // Setup mode
-      await SecureStore.setItemAsync('user_pin', enteredPin);
-      Alert.alert('PIN Set', 'Your security PIN has been saved.');
+    } catch (err) {
+      console.warn('PIN verification error:', err);
+      // Fallback: just let them in
       setPinAuthenticated(true);
       router.replace('/(protected)/dashboard');
     }

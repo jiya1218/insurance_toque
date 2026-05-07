@@ -9,12 +9,14 @@
 import { Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
 
+const LIVE_BASE_URL = 'https://insurance-toque-admin-panel.vercel.app';
+
 const getBaseUrl = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return 'http://localhost:3000';
   }
   // Point directly to Next.js admin panel backend
-  return (process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000').replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+  return (process.env.EXPO_PUBLIC_API_URL || LIVE_BASE_URL + '/api/v1').replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 };
 
 const BASE_URL = getBaseUrl();
