@@ -1,8 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, TextInput, Pressable, StyleSheet,
   KeyboardAvoidingView, Platform, ScrollView,
-  ActivityIndicator, Alert, Animated
+  ActivityIndicator, Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../src/lib/supabase';
@@ -17,31 +17,19 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
-  const shakeAnim = useRef(new Animated.Value(0)).current;
-
-  const shake = () => {
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 10, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -10, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 8, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
-    ]).start();
-  };
 
   const handleLogin = async () => {
-    if (!email.trim()) { shake(); Alert.alert('Missing Field', 'Please enter your email.'); return; }
-    if (!password) { shake(); Alert.alert('Missing Field', 'Please enter your password.'); return; }
+    if (!email.trim()) { Alert.alert('Missing Field', 'Please enter your email.'); return; }
+    if (!password) { Alert.alert('Missing Field', 'Please enter your password.'); return; }
 
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (error) {
-        shake();
         Alert.alert('Login Failed', error.message);
       }
       // AuthContext onAuthStateChange handles redirect automatically
     } catch (e: any) {
-      shake();
       Alert.alert('Error', e.message || 'Something went wrong');
     } finally {
       setLoading(false);
@@ -55,7 +43,7 @@ export default function LoginScreen() {
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 
-        {/* ── Hero / Branding ──────────────────────────────────────────── */}
+        {/* Hero / Branding */}
         <View style={styles.hero}>
           <View style={styles.logoWrap}>
             <Ionicons name="shield-checkmark" size={40} color={Colors.white} />
@@ -64,8 +52,8 @@ export default function LoginScreen() {
           <Text style={styles.tagline}>Internal Management System</Text>
         </View>
 
-        {/* ── Card ─────────────────────────────────────────────────────── */}
-        <Animated.View style={[styles.card, { transform: [{ translateX: shakeAnim }] }]}>
+        {/* Card — no Animated.View to avoid native crash */}
+        <View style={styles.card}>
           <Text style={styles.cardTitle}>Sign In</Text>
           <Text style={styles.cardSubtitle}>Enter your credentials to continue</Text>
 
@@ -152,7 +140,7 @@ export default function LoginScreen() {
               <Text style={styles.joinLink}>Join Torque Auto Advisor</Text>
             </Pressable>
           </View>
-        </Animated.View>
+        </View>
 
         {/* Version */}
         <Text style={styles.version}>v1.0.0 · Internal Use Only</Text>
@@ -172,7 +160,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
   },
 
-  // ── Hero ────────────────────────────────────────────────────────────
   hero: { alignItems: 'center', marginBottom: Spacing.xxxl },
   logoWrap: {
     width: 80, height: 80, borderRadius: 20,
@@ -189,16 +176,10 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xs, letterSpacing: 0.5,
   },
 
-  // ── Card ────────────────────────────────────────────────────────────
   card: {
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.xl,
     padding: Spacing.xxl,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 10,
   },
   cardTitle: {
     fontSize: FontSize.xxl, fontWeight: '900', color: Colors.text,
@@ -209,7 +190,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
 
-  // ── Fields ──────────────────────────────────────────────────────────
   fieldGroup: { marginBottom: Spacing.md },
   label: {
     fontSize: FontSize.xs, fontWeight: '700', color: Colors.textMuted,
@@ -226,11 +206,6 @@ const styles = StyleSheet.create({
   inputWrapFocused: {
     borderColor: Colors.primary,
     backgroundColor: Colors.white,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 2,
   },
   inputIcon: { marginRight: Spacing.sm },
   input: {
@@ -238,7 +213,6 @@ const styles = StyleSheet.create({
   },
   eyeBtn: { padding: Spacing.xs },
 
-  // ── Button ──────────────────────────────────────────────────────────
   signInBtn: {
     backgroundColor: Colors.primary,
     height: 52,
@@ -246,18 +220,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: Spacing.md,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 4,
   },
   signInBtnDisabled: { opacity: 0.7 },
   signInBtnText: {
     color: Colors.white, fontSize: FontSize.lg, fontWeight: '800', letterSpacing: 0.3,
   },
 
-  // ── Footer ──────────────────────────────────────────────────────────
   footerWrap: {
     marginTop: Spacing.xl,
     alignItems: 'center',

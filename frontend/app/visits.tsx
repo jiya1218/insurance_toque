@@ -6,6 +6,18 @@ import { Colors, Spacing, FontSize, BorderRadius } from '../src/utils/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 
+function getStatusStyle(status: string) {
+  const color = status === 'completed' ? Colors.success : status === 'in_progress' ? '#A21CAF' : Colors.primary;
+  return {
+    backgroundColor: color + '15',
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: color + '30',
+  };
+}
+
 export default function VisitsScreen() {
   const router = useRouter();
   const [items, setItems] = useState<any[]>([]);
@@ -63,10 +75,10 @@ export default function VisitsScreen() {
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <View style={styles.statusBadge(item.status)}>
-                <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
+              <View style={getStatusStyle(item.status)}>
+                <Text style={styles.statusText}>{item.status?.toUpperCase()}</Text>
               </View>
-              <Text style={styles.time}>{new Date(item.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+              <Text style={styles.time}>{item.scheduledAt ? new Date(item.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</Text>
             </View>
 
             <Text style={styles.purpose}>{item.purpose}</Text>
@@ -117,14 +129,6 @@ const styles = StyleSheet.create({
   title: { flex: 1, fontSize: FontSize.xxl, fontWeight: '900', color: Colors.text },
   card: { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.sm, padding: Spacing.lg },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.sm },
-  statusBadge: (status: string) => ({
-    backgroundColor: status === 'completed' ? Colors.success + '15' : status === 'in_progress' ? '#A21CAF15' : Colors.primary + '15',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: status === 'completed' ? Colors.success + '30' : status === 'in_progress' ? '#A21CAF30' : Colors.primary + '30'
-  }),
   statusText: { fontSize: 10, fontWeight: '900', color: Colors.text },
   time: { fontSize: FontSize.xs, color: Colors.textMuted, fontWeight: '600' },
   purpose: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.text, marginBottom: Spacing.xs },
