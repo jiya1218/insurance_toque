@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, SafeAreaView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, TextInput, SafeAreaView, RefreshControl } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { usersService, User } from '../src/services/users';
 import { Colors, Spacing, FontSize, BorderRadius } from '../src/utils/theme';
@@ -37,7 +37,7 @@ export default function UsersScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <TouchableOpacity testID="back-btn" onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color={Colors.text} /></TouchableOpacity>
+        <Pressable testID="back-btn" onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color={Colors.text} /></Pressable>
         <Text style={styles.title}>Users</Text>
         <Text style={styles.count}>{total}</Text>
       </View>

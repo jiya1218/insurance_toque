@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, SafeAreaView, Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
@@ -100,19 +100,19 @@ export default function PinLoginScreen() {
 
       <View style={styles.keypad}>
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-          <TouchableOpacity key={num} style={styles.key} onPress={() => handlePress(num.toString())}>
+          <Pressable key={num} style={styles.key} onPress={() => handlePress(num.toString())}>
             <Text style={styles.keyText}>{num}</Text>
-          </TouchableOpacity>
+          </Pressable>
         ))}
-        <TouchableOpacity style={styles.key} onPress={handleBiometric}>
+        <Pressable style={styles.key} onPress={handleBiometric}>
           <Ionicons name="finger-print" size={24} color={Colors.text} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.key} onPress={() => handlePress('0')}>
+        </Pressable>
+        <Pressable style={styles.key} onPress={() => handlePress('0')}>
           <Text style={styles.keyText}>0</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.key} onPress={handleDelete}>
+        </Pressable>
+        <Pressable style={styles.key} onPress={handleDelete}>
           <Ionicons name="backspace-outline" size={24} color={Colors.text} />
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </SafeAreaView>
   );

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, SafeAreaView, Alert } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, SafeAreaView, Alert } from 'react-native';
 import { useAuth } from '../src/context/AuthContext';
 import { Colors, Spacing, FontSize, BorderRadius } from '../src/utils/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -87,18 +87,18 @@ export default function LoginScreen() {
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
             />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
+            <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
               <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={Colors.textMuted} />
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
-          <TouchableOpacity style={styles.loginBtn} onPress={handleLogin} disabled={loading} activeOpacity={0.8}>
+          <Pressable style={styles.loginBtn} onPress={handleLogin} disabled={loading}>
             {loading ? (
               <ActivityIndicator color={Colors.white} />
             ) : (
               <Text style={styles.loginBtnText}>Sign In</Text>
             )}
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         <View style={styles.footer}>

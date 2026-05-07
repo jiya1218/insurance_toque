@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, RefreshControl, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, SafeAreaView, RefreshControl, Alert } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { api } from '../src/utils/api';
 import { Colors, Spacing, FontSize, BorderRadius } from '../src/utils/theme';
@@ -50,7 +50,7 @@ export default function VisitsScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color={Colors.text} /></TouchableOpacity>
+        <Pressable onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color={Colors.text} /></Pressable>
         <Text style={styles.title}>Field Work / Visits</Text>
       </View>
 
@@ -80,23 +80,23 @@ export default function VisitsScreen() {
             </View>
 
             {item.status === 'scheduled' && (
-              <TouchableOpacity 
+              <Pressable 
                 style={[styles.btn, { backgroundColor: Colors.primary }]} 
                 onPress={() => handleVisitAction(item, 'check_in')}
               >
                 <Ionicons name="log-in-outline" size={18} color="#fff" />
                 <Text style={styles.btnText}>Check In (GPS)</Text>
-              </TouchableOpacity>
+              </Pressable>
             )}
 
             {item.status === 'in_progress' && (
-              <TouchableOpacity 
+              <Pressable 
                 style={[styles.btn, { backgroundColor: Colors.success }]} 
                 onPress={() => handleVisitAction(item, 'check_out')}
               >
                 <Ionicons name="log-out-outline" size={18} color="#fff" />
                 <Text style={styles.btnText}>Check Out (GPS)</Text>
-              </TouchableOpacity>
+              </Pressable>
             )}
 
             {item.status === 'completed' && item.distanceKm !== null && (

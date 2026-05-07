@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, SafeAreaView, Alert } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, SafeAreaView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api } from '../../src/utils/api';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../src/utils/theme';
@@ -25,9 +25,9 @@ export default function NewLeadScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <TouchableOpacity testID="back-btn" onPress={() => router.back()} style={styles.backBtn}><Ionicons name="close" size={24} color={Colors.text} /></TouchableOpacity>
+        <Pressable testID="back-btn" onPress={() => router.back()} style={styles.backBtn}><Ionicons name="close" size={24} color={Colors.text} /></Pressable>
         <Text style={styles.headerTitle}>New Lead</Text>
-        <TouchableOpacity testID="save-lead-btn" onPress={submit} disabled={loading} style={styles.saveBtn}><Text style={styles.saveBtnText}>{loading ? 'Saving...' : 'Save'}</Text></TouchableOpacity>
+        <Pressable testID="save-lead-btn" onPress={submit} disabled={loading} style={styles.saveBtn}><Text style={styles.saveBtnText}>{loading ? 'Saving...' : 'Save'}</Text></Pressable>
       </View>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
@@ -46,9 +46,9 @@ export default function NewLeadScreen() {
           <Text style={styles.label}>VEHICLE TYPE</Text>
           <View style={styles.chipRow}>
             {['Car', 'Two Wheeler', 'Truck', 'Commercial'].map(t => (
-              <TouchableOpacity key={t} style={[styles.chip, form.vehicle_type === t && styles.chipActive]} onPress={() => update('vehicle_type', t)}>
+              <Pressable key={t} style={[styles.chip, form.vehicle_type === t && styles.chipActive]} onPress={() => update('vehicle_type', t)}>
                 <Text style={[styles.chipText, form.vehicle_type === t && styles.chipTextActive]}>{t}</Text>
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </View>
 
@@ -58,27 +58,27 @@ export default function NewLeadScreen() {
           <Text style={styles.label}>INSURANCE TYPE</Text>
           <View style={styles.chipRow}>
             {['comprehensive', 'third_party', 'commercial'].map(t => (
-              <TouchableOpacity key={t} style={[styles.chip, form.insurance_type === t && styles.chipActive]} onPress={() => update('insurance_type', t)}>
+              <Pressable key={t} style={[styles.chip, form.insurance_type === t && styles.chipActive]} onPress={() => update('insurance_type', t)}>
                 <Text style={[styles.chipText, form.insurance_type === t && styles.chipTextActive]}>{t.replace(/_/g, ' ')}</Text>
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </View>
 
           <Text style={styles.label}>SOURCE</Text>
           <View style={styles.chipRow}>
             {['direct', 'referral', 'website', 'walk_in', 'cold_call', 'social_media'].map(t => (
-              <TouchableOpacity key={t} style={[styles.chip, form.source === t && styles.chipActive]} onPress={() => update('source', t)}>
+              <Pressable key={t} style={[styles.chip, form.source === t && styles.chipActive]} onPress={() => update('source', t)}>
                 <Text style={[styles.chipText, form.source === t && styles.chipTextActive]}>{t.replace(/_/g, ' ')}</Text>
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </View>
 
           <Text style={styles.label}>PRIORITY</Text>
           <View style={styles.chipRow}>
             {['low', 'medium', 'high'].map(t => (
-              <TouchableOpacity key={t} style={[styles.chip, form.priority === t && styles.chipActive]} onPress={() => update('priority', t)}>
+              <Pressable key={t} style={[styles.chip, form.priority === t && styles.chipActive]} onPress={() => update('priority', t)}>
                 <Text style={[styles.chipText, form.priority === t && styles.chipTextActive]}>{t}</Text>
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </View>
 

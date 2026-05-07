@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/context/AuthContext';
 import { Colors, Spacing, FontSize, BorderRadius } from '../src/utils/theme';
@@ -39,9 +39,9 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <TouchableOpacity testID="back-btn" onPress={() => router.back()}>
+        <Pressable testID="back-btn" onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={styles.title}>Settings</Text>
       </View>
 
@@ -98,11 +98,10 @@ export default function SettingsScreen() {
           <View key={si}>
             <Text style={styles.sectionTitle}>{sec.title.toUpperCase()}</Text>
             {sec.items.map((item: any, ii) => (
-              <TouchableOpacity
+              <Pressable
                 key={ii}
                 testID={`setting-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
                 style={styles.item}
-                activeOpacity={0.7}
                 onPress={item.onPress}
               >
                 <Ionicons name={item.icon as any} size={22} color={Colors.textMuted} />
@@ -111,19 +110,19 @@ export default function SettingsScreen() {
                   <Text style={styles.itemDesc}>{item.desc}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={Colors.textLight} />
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </View>
         ))}
 
-        <TouchableOpacity
+        <Pressable
           testID="logout-btn"
           style={styles.logoutBtn}
           onPress={async () => { await logout(); router.replace('/'); }}
         >
           <Ionicons name="log-out-outline" size={20} color={Colors.error} />
           <Text style={styles.logoutText}>Sign Out</Text>
-        </TouchableOpacity>
+        </Pressable>
         <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>

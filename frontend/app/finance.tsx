@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, SafeAreaView, RefreshControl } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { api } from '../src/utils/api';
 import { Colors, Spacing, FontSize, BorderRadius, StatusColors } from '../src/utils/theme';
@@ -27,7 +27,7 @@ export default function FinanceScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <TouchableOpacity testID="back-btn" onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color={Colors.text} /></TouchableOpacity>
+        <Pressable testID="back-btn" onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color={Colors.text} /></Pressable>
         <Text style={styles.title}>Finance</Text>
       </View>
       <View style={styles.summaryRow}>
@@ -42,9 +42,9 @@ export default function FinanceScreen() {
       </View>
       <View style={styles.filterRow}>
         {['all', 'income', 'expense'].map(s => (
-          <TouchableOpacity key={s} style={[styles.chip, filter === s && styles.chipActive]} onPress={() => setFilter(s)}>
+          <Pressable key={s} style={[styles.chip, filter === s && styles.chipActive]} onPress={() => setFilter(s)}>
             <Text style={[styles.chipText, filter === s && styles.chipTextActive]}>{s === 'all' ? 'All' : s}</Text>
-          </TouchableOpacity>
+          </Pressable>
         ))}
       </View>
       <FlatList data={items} keyExtractor={i => i.id} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />}

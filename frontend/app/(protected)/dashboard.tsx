@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, RefreshControl, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, SafeAreaView, RefreshControl, Dimensions } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize, BorderRadius } from '../../src/utils/theme';
@@ -61,16 +61,16 @@ export default function DashboardScreen() {
             <Text style={styles.userName}>{user?.full_name || 'Admin'}</Text>
           </View>
           <View style={styles.headerActions}>
-            <TouchableOpacity 
+            <Pressable 
               onPress={() => router.push('/(protected)/notifications')} 
               style={styles.iconBtn}
             >
               <Ionicons name="notifications-outline" size={24} color={Colors.text} />
               <View style={styles.notifDot} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={logout} style={[styles.iconBtn, { backgroundColor: Colors.errorBg }]}>
+            </Pressable>
+            <Pressable onPress={logout} style={[styles.iconBtn, { backgroundColor: Colors.errorBg }]}>
               <Ionicons name="log-out-outline" size={24} color={Colors.error} />
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
 
@@ -90,7 +90,7 @@ export default function DashboardScreen() {
         </View>
         <View style={styles.moduleGrid}>
           {modules.map((m) => (
-            <TouchableOpacity 
+            <Pressable 
               key={m.name} 
               style={styles.moduleCard}
               onPress={() => router.push(m.route as any)}
@@ -99,16 +99,16 @@ export default function DashboardScreen() {
                 <Ionicons name={m.icon as any} size={26} color={m.color} />
               </View>
               <Text style={styles.moduleName}>{m.name}</Text>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </View>
 
         {/* Recent Activity */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent Updates</Text>
-          <TouchableOpacity onPress={() => router.push('/(protected)/notifications')}>
+          <Pressable onPress={() => router.push('/(protected)/notifications')}>
             <Text style={styles.seeAll}>View All</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
         <View style={styles.activityList}>
           {items.slice(0, 3).map((item, i) => (

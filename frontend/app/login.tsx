@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
+  View, Text, TextInput, Pressable, StyleSheet,
   KeyboardAvoidingView, Platform, ScrollView,
   ActivityIndicator, Alert, Animated
 } from 'react-native';
@@ -118,7 +118,7 @@ export default function LoginScreen() {
                 returnKeyType="done"
                 onSubmitEditing={handleLogin}
               />
-              <TouchableOpacity
+              <Pressable
                 testID="toggle-password"
                 onPress={() => setShowPassword(v => !v)}
                 style={styles.eyeBtn}
@@ -128,30 +128,29 @@ export default function LoginScreen() {
                   size={18}
                   color={Colors.textLight}
                 />
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
 
           {/* Sign In Button */}
-          <TouchableOpacity
+          <Pressable
             testID="login-submit-btn"
             style={[styles.signInBtn, loading && styles.signInBtnDisabled]}
             onPress={handleLogin}
-            activeOpacity={0.85}
             disabled={loading}
           >
             {loading
               ? <ActivityIndicator color={Colors.white} size="small" />
               : <Text style={styles.signInBtnText}>Sign In</Text>
             }
-          </TouchableOpacity>
+          </Pressable>
 
           {/* Footer */}
           <View style={styles.footerWrap}>
             <Text style={styles.footer}>New Employee?</Text>
-            <TouchableOpacity onPress={() => router.push('/onboarding')}>
+            <Pressable onPress={() => router.push('/onboarding')}>
               <Text style={styles.joinLink}>Join Torque Auto Advisor</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </Animated.View>
 

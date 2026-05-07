@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Linking, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, SafeAreaView, Linking, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { api } from '../../src/utils/api';
 import { Colors, Spacing, FontSize, BorderRadius, StatusColors } from '../../src/utils/theme';
@@ -61,9 +61,9 @@ export default function LeadDetailScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.headerBar}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={styles.headerTitle}>Lead Details</Text>
         <View style={{ width: 40 }} />
       </View>
@@ -85,21 +85,21 @@ export default function LeadDetailScreen() {
         </View>
 
         <View style={styles.actionsRow}>
-          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: Colors.success + '15' }]} onPress={makeCall}>
+          <Pressable style={[styles.actionBtn, { backgroundColor: Colors.success + '15' }]} onPress={makeCall}>
             <Ionicons name="call" size={22} color={Colors.success} />
             <Text style={[styles.actionLabel, { color: Colors.success }]}>Call</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#25D36615' }]} onPress={openWhatsApp}>
+          </Pressable>
+          <Pressable style={[styles.actionBtn, { backgroundColor: '#25D36615' }]} onPress={openWhatsApp}>
             <Ionicons name="logo-whatsapp" size={22} color="#25D366" />
             <Text style={[styles.actionLabel, { color: '#25D366' }]}>WhatsApp</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
+          </Pressable>
+          <Pressable 
             style={[styles.actionBtn, { backgroundColor: Colors.primaryLight }]} 
             onPress={() => router.push({ pathname: '/call-log', params: { leadId: id, leadName: lead.name } })}
           >
             <Ionicons name="create" size={22} color={Colors.primary} />
             <Text style={[styles.actionLabel, { color: Colors.primary }]}>Response</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         <View style={styles.infoCard}>

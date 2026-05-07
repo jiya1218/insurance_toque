@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { api } from '../src/utils/api';
 import { Colors, Spacing, FontSize, BorderRadius } from '../src/utils/theme';
@@ -85,13 +85,13 @@ export default function CallLogScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="close" size={24} color={Colors.text} />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={styles.headerTitle}>Log Call Outcome</Text>
-        <TouchableOpacity onPress={submit} disabled={saving || !selectedResponse} style={[styles.saveBtn, (!selectedResponse || saving) && { opacity: 0.5 }]}>
+        <Pressable onPress={submit} disabled={saving || !selectedResponse} style={[styles.saveBtn, (!selectedResponse || saving) && { opacity: 0.5 }]}>
           <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save'}</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
       
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -125,16 +125,15 @@ export default function CallLogScreen() {
               renderItem={({ item }) => {
                 const isSelected = selectedResponse?.id === item.id;
                 return (
-                  <TouchableOpacity 
+                  <Pressable 
                     style={[styles.responseItem, isSelected && styles.responseItemSelected]} 
                     onPress={() => setSelectedResponse(item)}
-                    activeOpacity={0.7}
                   >
                     <Text style={[styles.responseItemText, isSelected && styles.responseItemTextSelected]}>
                       {item.text}
                     </Text>
                     {isSelected && <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />}
-                  </TouchableOpacity>
+                  </Pressable>
                 );
               }}
               ListEmptyComponent={

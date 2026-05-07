@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet,
+  View, Text, FlatList, Pressable, StyleSheet,
   SafeAreaView, RefreshControl, ActivityIndicator
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -81,13 +81,13 @@ export default function NotificationsScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={styles.title}>Alerts</Text>
-        <TouchableOpacity onPress={markAllRead}>
+        <Pressable onPress={markAllRead}>
           <Text style={styles.markAll}>Read All</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {loading ? (
@@ -107,7 +107,7 @@ export default function NotificationsScreen() {
             </View>
           }
           renderItem={({ item }) => (
-            <TouchableOpacity 
+            <Pressable 
               style={[styles.card, !item.isRead && styles.unreadCard]}
               onPress={() => markRead(item.id)}
             >
@@ -124,7 +124,7 @@ export default function NotificationsScreen() {
                 <Text style={styles.time}>{timeAgo(item.createdAt)}</Text>
               </View>
               {!item.isRead && <View style={[styles.dot, { backgroundColor: Colors.primary }]} />}
-            </TouchableOpacity>
+            </Pressable>
           )}
         />
       )}

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, SafeAreaView, RefreshControl, Linking } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, TextInput, SafeAreaView, RefreshControl, Linking } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { api } from '../../../src/utils/api';
 import { Colors, Spacing, FontSize, BorderRadius, StatusColors } from '../../../src/utils/theme';
@@ -46,11 +46,11 @@ export default function LeadsScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color={Colors.text} /></TouchableOpacity>
+        <Pressable onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color={Colors.text} /></Pressable>
         <Text style={styles.title}>My Leads</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/lead/new')}>
+        <Pressable style={styles.addBtn} onPress={() => router.push('/lead/new')}>
           <Ionicons name="add" size={24} color={Colors.primary} />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       <View style={styles.searchRow}>
@@ -75,10 +75,9 @@ export default function LeadsScreen() {
         renderItem={({ item }) => {
           const sc = StatusColors[item.status.toLowerCase()] || StatusColors.new;
           return (
-            <TouchableOpacity 
+            <Pressable 
               style={styles.card} 
               onPress={() => router.push(`/lead/${item.id}`)}
-              activeOpacity={0.7}
             >
               <View style={styles.cardTop}>
                 <View style={{ flex: 1 }}>
@@ -102,29 +101,29 @@ export default function LeadsScreen() {
               </View>
 
               <View style={styles.cardActions}>
-                <TouchableOpacity 
+                <Pressable 
                   style={[styles.btn, {backgroundColor: Colors.success + '15'}]} 
                   onPress={() => handleCall(item.clientPhone)}
                 >
                   <Ionicons name="call" size={18} color={Colors.success} />
                   <Text style={[styles.btnText, {color: Colors.success}]}>Call</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
+                </Pressable>
+                <Pressable 
                   style={[styles.btn, {backgroundColor: '#25D36615'}]} 
                   onPress={() => handleWhatsApp(item.id, item.clientPhone, item.clientName, item.vehicleNo, item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : '')}
                 >
                   <Ionicons name="logo-whatsapp" size={18} color="#25D366" />
                   <Text style={[styles.btnText, {color: '#25D366'}]}>WhatsApp</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
+                </Pressable>
+                <Pressable 
                   style={[styles.btn, {backgroundColor: Colors.primaryLight}]} 
                   onPress={() => router.push({ pathname: '/call-log', params: { leadId: item.id, leadName: item.clientName } })}
                 >
                   <Ionicons name="create" size={18} color={Colors.primary} />
                   <Text style={[styles.btnText, {color: Colors.primary}]}>Log</Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
-            </TouchableOpacity>
+            </Pressable>
           );
         }}
       />

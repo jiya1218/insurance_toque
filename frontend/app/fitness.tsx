@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, SafeAreaView, RefreshControl } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { api } from '../src/utils/api';
 import { Colors, Spacing, FontSize, BorderRadius, StatusColors } from '../src/utils/theme';
@@ -26,7 +26,7 @@ export default function FitnessScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <TouchableOpacity testID="back-btn" onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color={Colors.text} /></TouchableOpacity>
+        <Pressable testID="back-btn" onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color={Colors.text} /></Pressable>
         <Text style={styles.title}>Fitness Work</Text>
         <Text style={styles.count}>{total}</Text>
       </View>

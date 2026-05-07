@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
+  View, Text, TextInput, Pressable, StyleSheet,
   KeyboardAvoidingView, Platform, ScrollView,
   ActivityIndicator, Alert, SafeAreaView
 } from 'react-native';
@@ -175,7 +175,7 @@ export default function OnboardingScreen() {
           <Text style={styles.docLabel}>{label}</Text>
           {doc && <Text style={styles.docName} numberOfLines={1}>{doc.name}</Text>}
         </View>
-        <TouchableOpacity 
+        <Pressable 
           style={[styles.uploadBtn, doc && styles.uploadBtnDone]} 
           onPress={() => isImage ? pickImage(type) : pickDocument(type)}
         >
@@ -183,7 +183,7 @@ export default function OnboardingScreen() {
           <Text style={[styles.uploadBtnText, doc && styles.uploadBtnTextDone]}>
             {doc ? 'Attached' : 'Upload'}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     );
   };
@@ -196,9 +196,9 @@ export default function OnboardingScreen() {
       >
         <ScrollView contentContainerStyle={styles.scroll}>
           {/* Header */}
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Pressable onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color={Colors.text} />
-          </TouchableOpacity>
+          </Pressable>
 
           <View style={styles.header}>
             <Text style={styles.title}>Join Torque Auto Advisor</Text>
@@ -247,10 +247,10 @@ export default function OnboardingScreen() {
                 />
               </View>
 
-              <TouchableOpacity style={styles.mainBtn} onPress={() => setStep(2)}>
+              <Pressable style={styles.mainBtn} onPress={() => setStep(2)}>
                 <Text style={styles.mainBtnText}>Next: Professional Info</Text>
                 <Ionicons name="arrow-forward" size={18} color={Colors.white} />
-              </TouchableOpacity>
+              </Pressable>
             </View>
           )}
 
@@ -311,12 +311,12 @@ export default function OnboardingScreen() {
               </View>
 
               <View style={styles.btnRow}>
-                <TouchableOpacity style={styles.backStepBtn} onPress={() => setStep(1)}>
+                <Pressable style={styles.backStepBtn} onPress={() => setStep(1)}>
                   <Text style={styles.backStepBtnText}>Back</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.mainBtn, { flex: 2 }]} onPress={() => setStep(3)}>
+                </Pressable>
+                <Pressable style={[styles.mainBtn, { flex: 2 }]} onPress={() => setStep(3)}>
                   <Text style={styles.mainBtnText}>Next: Documents</Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </View>
           )}
@@ -336,11 +336,11 @@ export default function OnboardingScreen() {
               </View>
 
               <View style={styles.btnRow}>
-                <TouchableOpacity style={styles.backStepBtn} onPress={() => setStep(2)}>
+                <Pressable style={styles.backStepBtn} onPress={() => setStep(2)}>
                   <Text style={styles.backStepBtnText}>Back</Text>
-                </TouchableOpacity>
+                </Pressable>
 
-                <TouchableOpacity 
+                <Pressable 
                   style={[styles.mainBtn, { flex: 2 }]} 
                   onPress={handleRegister}
                   disabled={loading}
@@ -350,7 +350,7 @@ export default function OnboardingScreen() {
                   ) : (
                     <Text style={styles.mainBtnText}>Submit Application</Text>
                   )}
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </View>
           )}

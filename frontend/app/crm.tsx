@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, SafeAreaView, RefreshControl, Linking } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, TextInput, SafeAreaView, RefreshControl, Linking } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { api } from '../src/utils/api';
 import { Colors, Spacing, FontSize, BorderRadius } from '../src/utils/theme';
@@ -27,7 +27,7 @@ export default function CRMScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <TouchableOpacity testID="back-btn" onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color={Colors.text} /></TouchableOpacity>
+        <Pressable testID="back-btn" onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color={Colors.text} /></Pressable>
         <Text style={styles.title}>CRM / Customers</Text>
         <Text style={styles.count}>{total}</Text>
       </View>
@@ -62,12 +62,12 @@ export default function CRMScreen() {
                 </View>
               </View>
               <View style={styles.actions}>
-                <TouchableOpacity testID={`call-${item.id}`} style={styles.actionBtn} onPress={() => Linking.openURL(`tel:${item.phone}`)}>
+                <Pressable testID={`call-${item.id}`} style={styles.actionBtn} onPress={() => Linking.openURL(`tel:${item.phone}`)}>
                   <Ionicons name="call" size={18} color={Colors.success} />
-                </TouchableOpacity>
-                <TouchableOpacity testID={`whatsapp-${item.id}`} style={styles.actionBtn} onPress={() => Linking.openURL(`https://wa.me/91${item.phone?.replace(/\D/g, '')}?text=Hi ${item.name}`)}>
+                </Pressable>
+                <Pressable testID={`whatsapp-${item.id}`} style={styles.actionBtn} onPress={() => Linking.openURL(`https://wa.me/91${item.phone?.replace(/\D/g, '')}?text=Hi ${item.name}`)}>
                   <Ionicons name="logo-whatsapp" size={18} color="#25D366" />
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </View>
           </View>

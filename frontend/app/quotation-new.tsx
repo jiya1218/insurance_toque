@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, SafeAreaView, Alert } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, SafeAreaView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api } from '../src/utils/api';
 import { Colors, Spacing, FontSize, BorderRadius } from '../src/utils/theme';
@@ -36,9 +36,9 @@ export default function QuotationNewScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <TouchableOpacity testID="back-btn" onPress={() => router.back()} style={styles.backBtn}><Ionicons name="close" size={24} color={Colors.text} /></TouchableOpacity>
+        <Pressable testID="back-btn" onPress={() => router.back()} style={styles.backBtn}><Ionicons name="close" size={24} color={Colors.text} /></Pressable>
         <Text style={styles.headerTitle}>New Quotation</Text>
-        <TouchableOpacity testID="save-quotation-btn" onPress={submit} disabled={loading} style={styles.saveBtn}><Text style={styles.saveBtnText}>{loading ? 'Saving...' : 'Save'}</Text></TouchableOpacity>
+        <Pressable testID="save-quotation-btn" onPress={submit} disabled={loading} style={styles.saveBtn}><Text style={styles.saveBtnText}>{loading ? 'Saving...' : 'Save'}</Text></Pressable>
       </View>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
@@ -47,9 +47,9 @@ export default function QuotationNewScreen() {
           <Text style={styles.label}>VEHICLE TYPE</Text>
           <View style={styles.chipRow}>
             {['Car', 'Two Wheeler', 'Truck', 'Commercial'].map(t => (
-              <TouchableOpacity key={t} style={[styles.chip, form.vehicle_type === t && styles.chipActive]} onPress={() => update('vehicle_type', t)}>
+              <Pressable key={t} style={[styles.chip, form.vehicle_type === t && styles.chipActive]} onPress={() => update('vehicle_type', t)}>
                 <Text style={[styles.chipText, form.vehicle_type === t && styles.chipTextActive]}>{t}</Text>
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </View>
           <Text style={styles.label}>VEHICLE NUMBER</Text>
@@ -57,9 +57,9 @@ export default function QuotationNewScreen() {
           <Text style={styles.label}>INSURANCE TYPE</Text>
           <View style={styles.chipRow}>
             {['comprehensive', 'third_party', 'commercial'].map(t => (
-              <TouchableOpacity key={t} style={[styles.chip, form.insurance_type === t && styles.chipActive]} onPress={() => update('insurance_type', t)}>
+              <Pressable key={t} style={[styles.chip, form.insurance_type === t && styles.chipActive]} onPress={() => update('insurance_type', t)}>
                 <Text style={[styles.chipText, form.insurance_type === t && styles.chipTextActive]}>{t.replace(/_/g, ' ')}</Text>
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </View>
           <Text style={styles.label}>PREMIUM AMOUNT (₹) *</Text>
@@ -69,9 +69,9 @@ export default function QuotationNewScreen() {
           <Text style={styles.label}>NCB %</Text>
           <View style={styles.chipRow}>
             {['0%', '20%', '25%', '35%', '45%', '50%'].map(t => (
-              <TouchableOpacity key={t} style={[styles.chip, form.ncb === t && styles.chipActive]} onPress={() => update('ncb', t)}>
+              <Pressable key={t} style={[styles.chip, form.ncb === t && styles.chipActive]} onPress={() => update('ncb', t)}>
                 <Text style={[styles.chipText, form.ncb === t && styles.chipTextActive]}>{t}</Text>
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </View>
           <Text style={styles.label}>COVERAGE DETAILS</Text>
