@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
-import { api } from '../utils/api';
 
 interface User {
   id: string;
@@ -31,8 +30,10 @@ const AuthContext = createContext<AuthContextType>({
   setPinAuthenticated: () => {},
   logout: async () => {},
   refreshUser: async () => {},
-  login: async (email, password) => {},
+  login: async () => {},
 });
+
+const LIVE_API_BASE = 'https://insurance-toque-admin-panel.vercel.app';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -40,53 +41,95 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isPinAuthenticated, setIsPinAuthenticated] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+
+    // Safety timeout: never stay loading forever
+    const safetyTimeout = setTimeout(() => {
+      if (mounted) setIsLoading(false);
+    }, 5000);
+
     // On mount: check existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) fetchProfile();
-      else setIsLoading(false);
-    });
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        if (!mounted) return;
+        if (session) {
+          fetchProfile().finally(() => {
+            if (mounted) setIsLoading(false);
+          });
+        } else {
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.warn('getSession error:', err);
+        if (mounted) setIsLoading(false);
+      });
 
     // Listen to auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) fetchProfile();
-      else { setUser(null); setIsLoading(false); }
+      if (!mounted) return;
+      if (session) {
+        fetchProfile().catch(() => {});
+      } else {
+        setUser(null);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      clearTimeout(safetyTimeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   async function fetchProfile() {
-    // Safety timeout: don't wait more than 2 seconds for the profile
-    const timeoutId = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
-
     try {
-      const data = await api.get<any>('/auth/me');
-      if (data) {
+      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      if (!token) {
+        setUser(null);
+        return;
+      }
+
+      const response = await fetch(`${LIVE_API_BASE}/api/v1/auth/me`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        console.warn('Profile fetch failed:', response.status);
+        setUser(null);
+        return;
+      }
+
+      const data = await response.json();
+      if (data && data.id) {
         setUser({
           id: data.id,
           email: data.email,
-          full_name: data.full_name,
-          name: data.full_name,          // alias dashboard uses
-          phone: data.phone || '',
+          full_name: data.full_name || data.fullName || '',
+          name: data.full_name || data.fullName || '',
+          phone: data.phone || data.personalMobile || '',
           role: data.role?.name || '',
-          role_id: data.role_id,
+          role_id: data.roleId || data.role_id || null,
           permissions: (data.role?.permissions || []).map((p: any) => p.name),
-          is_active: data.is_active,
+          is_active: data.is_active ?? data.isActive ?? true,
         });
       }
     } catch (e) {
-      console.log('Profile fetch skipped (expected if not logged in)');
+      console.warn('Profile fetch error:', e);
       setUser(null);
-    } finally {
-      clearTimeout(timeoutId);
-      setIsLoading(false);
     }
   }
 
   async function logout() {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('Logout error:', e);
+    }
     setUser(null);
   }
 
@@ -97,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function login(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    // fetchProfile will be called by onAuthStateChange
   }
 
   return (

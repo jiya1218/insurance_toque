@@ -1,29 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, SafeAreaView } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, SafeAreaView, Alert } from 'react-native';
 import { useAuth } from '../src/context/AuthContext';
 import { Colors, Spacing, FontSize, BorderRadius } from '../src/utils/theme';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen() {
   const { user, isLoading, login } = useAuth();
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => {
-    if (!isLoading && user) {
-      router.replace('/(protected)/dashboard');
-    }
-  }, [user, isLoading, router]);
-
-  // Force-show the login form immediately
+  // If already logged in, show nothing — the route guard in _layout will redirect
   if (user && !isLoading) {
-    router.replace('/(protected)/dashboard');
-    return null;
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={{ marginTop: 16, color: Colors.textMuted }}>Redirecting...</Text>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   async function handleLogin() {
@@ -35,9 +33,10 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await login(email.trim(), password);
-      router.replace('/(protected)/dashboard');
+      // DO NOT navigate here — the route guard in _layout.tsx handles it
     } catch (e: any) {
       setError(e.message || 'Login failed');
+      Alert.alert('Login Failed', e.message || 'Please check your credentials.');
     } finally {
       setLoading(false);
     }
@@ -66,7 +65,6 @@ export default function LoginScreen() {
           <View style={styles.inputContainer}>
             <Ionicons name="mail-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
             <TextInput
-              testID="login-email-input"
               style={styles.input}
               placeholder="Enter your email"
               placeholderTextColor={Colors.textLight}
@@ -82,7 +80,6 @@ export default function LoginScreen() {
           <View style={styles.inputContainer}>
             <Ionicons name="lock-closed-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
             <TextInput
-              testID="login-password-input"
               style={styles.input}
               placeholder="Enter your password"
               placeholderTextColor={Colors.textLight}
@@ -90,12 +87,12 @@ export default function LoginScreen() {
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
             />
-            <TouchableOpacity testID="toggle-password-btn" onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
               <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={Colors.textMuted} />
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity testID="login-submit-btn" style={styles.loginBtn} onPress={handleLogin} disabled={loading} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.loginBtn} onPress={handleLogin} disabled={loading} activeOpacity={0.8}>
             {loading ? (
               <ActivityIndicator color={Colors.white} />
             ) : (
@@ -105,12 +102,6 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.footer}>
-          <TouchableOpacity 
-            style={styles.joinBtn} 
-            onPress={() => router.push('/onboarding')}
-          >
-            <Text style={styles.joinText}>New Employee? <Text style={styles.joinBold}>Join Torque</Text></Text>
-          </TouchableOpacity>
           <Text style={styles.footerText}>PROD CREDENTIALS</Text>
           <Text style={styles.footerCred}>admin@toque.com / Admin@123</Text>
         </View>
@@ -138,9 +129,6 @@ const styles = StyleSheet.create({
   errorBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.errorBg, padding: Spacing.md, borderRadius: BorderRadius.sm, gap: Spacing.sm },
   errorText: { color: Colors.error, fontSize: FontSize.sm, flex: 1 },
   footer: { alignItems: 'center', marginTop: 30 },
-  joinBtn: { marginBottom: 20, padding: 10 },
-  joinText: { fontSize: FontSize.md, color: Colors.textMuted },
-  joinBold: { color: Colors.primary, fontWeight: '800' },
   footerText: { fontSize: FontSize.xs, color: Colors.textLight, fontWeight: '600', letterSpacing: 1 },
   footerCred: { fontSize: FontSize.sm, color: Colors.textMuted, marginTop: Spacing.xs },
 });

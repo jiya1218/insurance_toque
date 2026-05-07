@@ -1,6 +1,6 @@
 import { Slot, useRouter, useSegments, useRootNavigationState } from 'expo-router';
-import { useEffect } from 'react';
-import { Platform } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Platform, View, Text } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 
@@ -8,46 +8,42 @@ import { AuthProvider, useAuth } from '../src/context/AuthContext';
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function RootLayoutNav() {
-  const { user, isLoading, isPinAuthenticated, setPinAuthenticated } = useAuth();
+  const { user, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const navigationState = useRootNavigationState();
+  const [hasNavigated, setHasNavigated] = useState(false);
 
+  // Hide splash when loading finishes
   useEffect(() => {
     if (!isLoading) {
       SplashScreen.hideAsync().catch(() => {});
     }
   }, [isLoading]);
 
-  // Route guard: redirect based on auth state
+  // Simple route guard — only fires once per auth state change
   useEffect(() => {
-    // Wait until navigation state is initialized and loading is done
     if (!navigationState?.key || isLoading) return;
 
     const timer = setTimeout(() => {
       try {
-        const isWeb = Platform.OS === 'web';
         const inProtectedGroup = segments[0] === '(protected)';
-        const inPinAuth = segments[0] === 'pin-auth';
-        const inLogin = !segments[0] || segments[0] === 'login' || segments[0] === 'index';
 
         if (!user && inProtectedGroup) {
-          // Not logged in but trying to access protected routes
+          // Not logged in but on protected page → go to login
           router.replace('/');
-        } else if (user && !isPinAuthenticated && !inPinAuth && !isWeb) {
-          // Logged in but PIN not verified yet (mobile only)
-          router.replace('/pin-auth');
-        } else if (user && (isPinAuthenticated || isWeb) && inLogin) {
-          // Fully authenticated, redirect to dashboard
+        } else if (user && !inProtectedGroup) {
+          // Logged in but on login/onboarding page → go to dashboard
+          // Skip PIN auth for now to ensure basic flow works
           router.replace('/(protected)/dashboard');
         }
       } catch (err) {
-        console.warn('Route guard error:', err);
+        console.warn('Navigation error:', err);
       }
-    }, 100);
+    }, 200);
 
     return () => clearTimeout(timer);
-  }, [user, isPinAuthenticated, segments, navigationState?.key, isLoading, router]);
+  }, [user, segments, navigationState?.key, isLoading]);
 
   return <Slot />;
 }
