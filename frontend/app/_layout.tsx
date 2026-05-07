@@ -1,18 +1,54 @@
 import { Slot, useRouter, useSegments, useRootNavigationState } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Platform, View, Text } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, Alert } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+// Global error boundary to SHOW errors instead of crashing
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: string }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: '' };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error: error.message + '\n' + error.stack };
+  }
+
+  componentDidCatch(error: Error, info: any) {
+    console.error('ErrorBoundary caught:', error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={{ flex: 1, backgroundColor: '#1a1a2e', padding: 20, paddingTop: 60 }}>
+          <Text style={{ color: '#e94560', fontSize: 20, fontWeight: 'bold', marginBottom: 16 }}>
+            App Error (Debug Info)
+          </Text>
+          <ScrollView>
+            <Text style={{ color: '#eee', fontSize: 13, fontFamily: 'monospace' }}>
+              {this.state.error}
+            </Text>
+          </ScrollView>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function RootLayoutNav() {
   const { user, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const navigationState = useRootNavigationState();
-  const [hasNavigated, setHasNavigated] = useState(false);
 
   // Hide splash when loading finishes
   useEffect(() => {
@@ -21,7 +57,7 @@ function RootLayoutNav() {
     }
   }, [isLoading]);
 
-  // Simple route guard — only fires once per auth state change
+  // Simple route guard
   useEffect(() => {
     if (!navigationState?.key || isLoading) return;
 
@@ -30,15 +66,13 @@ function RootLayoutNav() {
         const inProtectedGroup = segments[0] === '(protected)';
 
         if (!user && inProtectedGroup) {
-          // Not logged in but on protected page → go to login
           router.replace('/');
         } else if (user && !inProtectedGroup) {
-          // Logged in but on login/onboarding page → go to dashboard
-          // Skip PIN auth for now to ensure basic flow works
           router.replace('/(protected)/dashboard');
         }
       } catch (err) {
         console.warn('Navigation error:', err);
+        Alert.alert('Navigation Error', String(err));
       }
     }, 200);
 
@@ -50,8 +84,10 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <RootLayoutNav />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
