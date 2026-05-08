@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, SafeAreaView, RefreshControl } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { quotationsService, Quotation } from '../src/services/quotations';
-import { Colors, Spacing, FontSize, BorderRadius, StatusColors } from '../src/utils/theme';
+import { quotationsService, Quotation } from '../../src/services/quotations';
+import { Colors, Spacing, FontSize, BorderRadius, StatusColors } from '../../src/utils/theme';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function QuotationsScreen() {

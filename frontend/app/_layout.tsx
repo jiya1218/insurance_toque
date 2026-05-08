@@ -53,10 +53,15 @@ function RootLayoutNav() {
     if (!navigationState?.key || isLoading) return;
     const timer = setTimeout(() => {
       try {
-        const inProtectedGroup = segments[0] === '(protected)';
-        if (!user && inProtectedGroup) {
+        const publicRoutes = ['/', '/login', '/onboarding', '/pin-auth'];
+        const currentPath = '/' + segments.join('/');
+        const isPublicRoute = publicRoutes.some(route => currentPath === route || currentPath.startsWith(route + '/'));
+        
+        if (!user && !isPublicRoute) {
           router.replace('/');
-        } else if (user && !inProtectedGroup) {
+        } else if (user && isPublicRoute && currentPath !== '/(protected)/dashboard') {
+          // If logged in and hitting a public route, send to dashboard
+          // But allow them to stay on the route if it's already dashboard (avoid loop)
           router.replace('/(protected)/dashboard');
         }
       } catch (err) {

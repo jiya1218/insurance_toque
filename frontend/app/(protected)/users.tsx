@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, TextInput, SafeAreaView, RefreshControl } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { usersService, User } from '../src/services/users';
-import { Colors, Spacing, FontSize, BorderRadius } from '../src/utils/theme';
+import { usersService, User } from '../../src/services/users';
+import { Colors, Spacing, FontSize, BorderRadius } from '../../src/utils/theme';
 import { Ionicons } from '@expo/vector-icons';
 
 const ALL_ROLES = ['super_admin','admin','manager','branch_manager','regional_manager','sales_executive','telecaller','field_executive','rto_executive','claims_executive','loan_executive','crm_executive','accountant','hr','auditor','data_entry','support','it_admin','viewer'];

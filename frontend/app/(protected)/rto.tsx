@@ -1,11 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, SafeAreaView, RefreshControl } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { api } from '../src/utils/api';
-import { Colors, Spacing, FontSize, BorderRadius, StatusColors } from '../src/utils/theme';
+import { api } from '../../src/utils/api';
+import { Colors, Spacing, FontSize, BorderRadius, StatusColors } from '../../src/utils/theme';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function LoansScreen() {
+export default function RTOScreen() {
   const router = useRouter();
   const [items, setItems] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
@@ -13,7 +13,7 @@ export default function LoansScreen() {
 
   const load = useCallback(async () => {
     try {
-      const data = await api.get<any[]>('/finance/loans');
+      const data = await api.get<any[]>('/workflow/rto');
       const arr = Array.isArray(data) ? data : (data as any).items || [];
       setItems(arr);
       setTotal(arr.length);
@@ -27,40 +27,23 @@ export default function LoansScreen() {
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
         <Pressable testID="back-btn" onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color={Colors.text} /></Pressable>
-        <Text style={styles.title}>Loans</Text>
+        <Text style={styles.title}>RTO Work</Text>
         <Text style={styles.count}>{total}</Text>
       </View>
       <FlatList data={items} keyExtractor={i => i.id} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />}
         contentContainerStyle={{ padding: Spacing.md, gap: Spacing.sm }}
-        ListEmptyComponent={<View style={styles.empty}><Ionicons name="cash-outline" size={48} color={Colors.textLight} /><Text style={styles.emptyText}>No loans</Text></View>}
+        ListEmptyComponent={<View style={styles.empty}><Ionicons name="car-outline" size={48} color={Colors.textLight} /><Text style={styles.emptyText}>No RTO work</Text></View>}
         renderItem={({ item }) => {
-          const sc = StatusColors[item.status] || StatusColors.applied;
+          const sc = StatusColors[item.status] || StatusColors.pending;
           return (
             <View style={styles.card}>
               <View style={styles.cardTop}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.cardName}>{item.customerName || item.customer_name}</Text>
-                  <Text style={styles.cardMeta}>{(item.loanType || item.loan_type)} loan · {item.customerPhone || item.customer_phone}</Text>
-                </View>
-                <View style={[styles.badge, { backgroundColor: sc.bg }]}><Text style={[styles.badgeText, { color: sc.text }]}>{item.status}</Text></View>
+                <View style={{ flex: 1 }}><Text style={styles.cardName}>{item.customerName || item.customer_name}</Text><Text style={styles.cardMeta}>{item.vehicleNumber || item.vehicle_number} · {(item.workType || item.work_type)?.replace(/_/g, ' ')}</Text></View>
+                <View style={[styles.badge, { backgroundColor: sc.bg }]}><Text style={[styles.badgeText, { color: sc.text }]}>{item.status?.replace(/_/g, ' ')}</Text></View>
               </View>
               <View style={styles.cardBottom}>
-                <View>
-                  <Text style={styles.loanLabel}>Amount</Text>
-                  <Text style={styles.loanValue}>₹{(item.amount || 0).toLocaleString()}</Text>
-                </View>
-                <View>
-                  <Text style={styles.loanLabel}>EMI</Text>
-                  <Text style={styles.loanValue}>₹{(item.emi || 0).toLocaleString()}</Text>
-                </View>
-                <View>
-                  <Text style={styles.loanLabel}>Rate</Text>
-                  <Text style={styles.loanValue}>{item.interestRate || item.interest_rate}%</Text>
-                </View>
-                <View>
-                  <Text style={styles.loanLabel}>Tenure</Text>
-                  <Text style={styles.loanValue}>{item.tenureMonths || item.tenure} mo</Text>
-                </View>
+                <Text style={styles.amount}>₹{(item.fees || 0).toLocaleString()}</Text>
+                <Text style={styles.cardDate}>{item.dueDate || item.due_date ? `Due: ${item.dueDate || item.due_date}` : ''}</Text>
               </View>
             </View>
           );
@@ -81,9 +64,9 @@ const styles = StyleSheet.create({
   cardMeta: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2, textTransform: 'capitalize' },
   badge: { paddingHorizontal: Spacing.sm, paddingVertical: 2, borderRadius: BorderRadius.sm },
   badgeText: { fontSize: FontSize.xs, fontWeight: '700', textTransform: 'capitalize' },
-  cardBottom: { flexDirection: 'row', justifyContent: 'space-between', marginTop: Spacing.lg, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.border },
-  loanLabel: { fontSize: FontSize.xs, color: Colors.textMuted, fontWeight: '500' },
-  loanValue: { fontSize: FontSize.md, fontWeight: '900', color: Colors.text, marginTop: 2 },
+  cardBottom: { flexDirection: 'row', justifyContent: 'space-between', marginTop: Spacing.md },
+  amount: { fontSize: FontSize.lg, fontWeight: '900', color: Colors.text },
+  cardDate: { fontSize: FontSize.sm, color: Colors.textMuted },
   empty: { alignItems: 'center', paddingTop: 60, gap: Spacing.md },
   emptyText: { fontSize: FontSize.md, color: Colors.textMuted },
 });

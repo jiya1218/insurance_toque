@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '../src/context/AuthContext';
-import { Colors, Spacing, FontSize, BorderRadius } from '../src/utils/theme';
+import { useAuth } from '../../src/context/AuthContext';
+import { Colors, Spacing, FontSize, BorderRadius } from '../../src/utils/theme';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function SettingsScreen() {

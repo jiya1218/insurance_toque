@@ -39,17 +39,17 @@ export default function DashboardScreen() {
 
   const modules = [
     { name: 'Leads', icon: 'people', color: '#3b82f6', route: '/(protected)/leads' },
-    { name: 'Finance', icon: 'wallet', color: '#10b981', route: '/finance' },
-    { name: 'CRM', icon: 'person-add', color: '#8b5cf6', route: '/crm' },
-    { name: 'Claims', icon: 'document-text', color: '#f59e0b', route: '/claims' },
-    { name: 'Visits', icon: 'location', color: '#f43f5e', route: '/visits' },
-    { name: 'RTO', icon: 'car', color: '#ef4444', route: '/rto' },
-    { name: 'Fitness', icon: 'fitness', color: '#06b6d4', route: '/fitness' },
-    { name: 'Quotations', icon: 'clipboard', color: '#6366f1', route: '/quotations' },
-    { name: 'HR', icon: 'people-circle', color: '#ec4899', route: '/hr' },
-    { name: 'Loans', icon: 'cash', color: '#84cc16', route: '/loans' },
-    { name: 'Users', icon: 'person', color: '#14b8a6', route: '/users' },
-    { name: 'Settings', icon: 'settings', color: '#94a3b8', route: '/settings' },
+    { name: 'Finance', icon: 'wallet', color: '#10b981', route: '/(protected)/finance' },
+    { name: 'CRM', icon: 'person-add', color: '#8b5cf6', route: '/(protected)/crm' },
+    { name: 'Claims', icon: 'document-text', color: '#f59e0b', route: '/(protected)/claims' },
+    { name: 'Visits', icon: 'location', color: '#f43f5e', route: '/(protected)/visits' },
+    { name: 'RTO', icon: 'car', color: '#ef4444', route: '/(protected)/rto' },
+    { name: 'Fitness', icon: 'fitness', color: '#06b6d4', route: '/(protected)/fitness' },
+    { name: 'Quotations', icon: 'clipboard', color: '#6366f1', route: '/(protected)/quotations' },
+    { name: 'HR', icon: 'people-circle', color: '#ec4899', route: '/(protected)/hr' },
+    { name: 'Loans', icon: 'cash', color: '#84cc16', route: '/(protected)/loans' },
+    { name: 'Users', icon: 'person', color: '#14b8a6', route: '/(protected)/users' },
+    { name: 'Settings', icon: 'settings', color: '#94a3b8', route: '/(protected)/settings' },
     { name: 'Alerts', icon: 'notifications', color: '#f97316', route: '/(protected)/notifications' },
   ];
 

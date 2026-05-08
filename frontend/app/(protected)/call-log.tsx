@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { api } from '../src/utils/api';
-import { Colors, Spacing, FontSize, BorderRadius } from '../src/utils/theme';
+import { api } from '../../src/utils/api';
+import { Colors, Spacing, FontSize, BorderRadius } from '../../src/utils/theme';
 import { Ionicons } from '@expo/vector-icons';
 
 interface PredefinedResponse {
