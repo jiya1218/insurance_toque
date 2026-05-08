@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, SafeAreaView, Linking, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { api } from '../../src/utils/api';
-import { Colors, Spacing, FontSize, BorderRadius, StatusColors } from '../../src/utils/theme';
+import { api } from '../../../src/utils/api';
+import { Colors, Spacing, FontSize, BorderRadius, StatusColors } from '../../../src/utils/theme';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function LeadDetailScreen() {
