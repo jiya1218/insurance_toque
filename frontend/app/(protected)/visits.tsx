@@ -71,7 +71,7 @@ export default function VisitsScreen() {
                 borderWidth: 1,
                 borderColor: item.status === 'completed' ? Colors.success + '30' : item.status === 'in_progress' ? '#A21CAF30' : Colors.primary + '30'
               }}>
-                <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
+                <Text style={styles.statusText}>{(item.status || 'scheduled').toUpperCase()}</Text>
               </View>
               <Text style={styles.time}>{new Date(item.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
             </View>

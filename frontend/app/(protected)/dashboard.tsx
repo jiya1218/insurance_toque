@@ -83,7 +83,7 @@ export default function DashboardScreen() {
         <View style={styles.statsSection}>
           <View style={styles.statsGrid}>
             <StatCard icon="people" value={stats.leads} label="Leads" color="#3b82f6" />
-            <StatCard icon="trending-up" value={`₹${stats.revenue}`} label="Revenue" color="#10b981" />
+            <StatCard icon="trending-up" value={`₹${stats.revenue ?? 0}`} label="Revenue" color="#10b981" />
             <StatCard icon="time" value={stats.pending} label="Pending" color="#f59e0b" />
             <StatCard icon="shield-checkmark" value={stats.claims} label="Claims" color="#ef4444" />
           </View>
