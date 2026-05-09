@@ -1,6 +1,7 @@
 "use client"
 import React, { useState, useEffect } from 'react'
 import AdminLayout from '@/components/layout/AdminLayout'
+import { fetchApi } from '@/lib/api'
 import { Plus, Edit2, Trash2, GripVertical, Check, X } from 'lucide-react'
 
 export default function ResponsesPage() {
@@ -16,8 +17,7 @@ export default function ResponsesPage() {
   const fetchResponses = async () => {
     setIsLoading(true)
     try {
-      const res = await fetch('/api/v1/settings/responses')
-      const data = await res.json()
+      const data = await fetchApi('/api/v1/settings/responses')
       setResponses(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Failed to fetch responses:', error)
@@ -32,41 +32,33 @@ export default function ResponsesPage() {
     if (!text) return
     
     try {
-      const res = await fetch('/api/v1/settings/responses', {
+      await fetchApi('/api/v1/settings/responses', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, isActive: true, requiresFollowUp: false })
       })
-      if (res.ok) fetchResponses()
-      else alert("Failed to add response")
+      fetchResponses()
     } catch (error) {
-      console.error(error)
+      alert("Failed to add response")
     }
   }
 
   const handleSave = async (id: string) => {
     try {
-      const res = await fetch(`/api/v1/settings/responses/${id}`, {
+      await fetchApi(`/api/v1/settings/responses/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm)
       })
-      if (res.ok) {
-        setIsEditing(null)
-        fetchResponses()
-      } else {
-        alert("Failed to update response")
-      }
+      setIsEditing(null)
+      fetchResponses()
     } catch (error) {
-      console.error(error)
+      alert("Failed to update response")
     }
   }
 
   const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      await fetch(`/api/v1/settings/responses/${id}`, {
+      await fetchApi(`/api/v1/settings/responses/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive: !currentStatus })
       })
       fetchResponses()
@@ -78,7 +70,7 @@ export default function ResponsesPage() {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this response?")) return
     try {
-      await fetch(`/api/v1/settings/responses/${id}`, { method: 'DELETE' })
+      await fetchApi(`/api/v1/settings/responses/${id}`, { method: 'DELETE' })
       fetchResponses()
     } catch (error) {
       console.error(error)

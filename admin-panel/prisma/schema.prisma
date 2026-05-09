@@ -9,47 +9,43 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(uuid()) @db.Uuid
-  email         String   @unique
-  fullName      String
-  roleId        String?  @db.Uuid
-  isActive              Boolean  @default(true)
-  expoPushToken         String?
-  
-  // Onboarding Fields
-  highestQualification  String?
-  dateOfBirth           DateTime?
-  joiningDate           DateTime?
-  personalMobile        String?
-  homeMobile            String?
-  
-  createdAt             DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  role          Role?         @relation(fields: [roleId], references: [id])
-  permissions   Permission[]  @relation("UserPermissions")
-  assignedLeads Lead[]        @relation("AssignedLeads")
-  createdQuotes Quotation[]
-  activityLogs  ActivityLog[]
-  calls         Call[]
-  followUps     FollowUp[]
-  claims        Claim[]
-  transactions  Transaction[]
-  loans         Loan[]
-  rtoWork       RTOWork[]
-  fitnessWork   FitnessWork[]
-  visits        Visit[]
-  documents     Document[]
-  notifications Notification[]
-  dataChanges   DataChangeRequest[] @relation("RequestedBy")
-  reviewedChanges DataChangeRequest[] @relation("ReviewedBy")
-  leadAssignments LeadAssignment[]
-  whatsappLogs    LeadWhatsAppLog[]
-  statusHistories LeadStatusHistory[]
-  attendance      Attendance[]
-  leaveRequests   LeaveRequest[]  @relation("LeaveRequests")
-  leaveApprovals  LeaveRequest[]  @relation("LeaveApprovals")
-  salaries        Salary[]
+  id                   String              @id @default(uuid()) @db.Uuid
+  email                String              @unique
+  fullName             String
+  roleId               String?             @db.Uuid
+  isActive             Boolean             @default(true)
+  expoPushToken        String?
+  highestQualification String?
+  dateOfBirth          DateTime?
+  joiningDate          DateTime?
+  personalMobile       String?
+  homeMobile           String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  activityLogs         ActivityLog[]
+  attendance           Attendance[]
+  calls                Call[]
+  claims               Claim[]
+  dataChanges          DataChangeRequest[] @relation("RequestedBy")
+  reviewedChanges      DataChangeRequest[] @relation("ReviewedBy")
+  documents            Document[]
+  fitnessWork          FitnessWork[]
+  followUps            FollowUp[]
+  leadAssignments      LeadAssignment[]
+  statusHistories      LeadStatusHistory[]
+  whatsappLogs         LeadWhatsAppLog[]
+  assignedLeads        Lead[]              @relation("AssignedLeads")
+  leaveApprovals       LeaveRequest[]      @relation("LeaveApprovals")
+  leaveRequests        LeaveRequest[]      @relation("LeaveRequests")
+  loans                Loan[]
+  notifications        Notification[]
+  createdQuotes        Quotation[]
+  rtoWork              RTOWork[]
+  salaries             Salary[]
+  transactions         Transaction[]
+  role                 Role?               @relation(fields: [roleId], references: [id])
+  visits               Visit[]
+  permissions          Permission[]        @relation("UserPermissions")
 
   @@map("users")
 }
@@ -58,8 +54,8 @@ model Role {
   id          String       @id @default(uuid()) @db.Uuid
   name        String       @unique
   description String?
-  permissions Permission[] @relation("RolePermissions")
   users       User[]
+  permissions Permission[] @relation("RolePermissions")
 
   @@map("roles")
 }
@@ -75,39 +71,35 @@ model Permission {
 }
 
 model Lead {
-  id          String   @id @default(uuid()) @db.Uuid
-  assignedTo  String?  @db.Uuid
-  clientName  String
-  clientEmail String?
-  clientPhone String?
-  status      String   @default("New")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  assignee    User?         @relation("AssignedLeads", fields: [assignedTo], references: [id])
-  policies    Policy[]
-  quotations  Quotation[]
-  calls       Call[]
-  followUps   FollowUp[]
-  claims      Claim[]
-  loans       Loan[]
-  rtoWork     RTOWork[]
-  fitnessWork FitnessWork[]
-  visits      Visit[]
-  
-  // New Workflow Fields
-  vehicleNo       String?
-  expiryDate      DateTime?
+  id               String              @id @default(uuid()) @db.Uuid
+  assignedTo       String?             @db.Uuid
+  clientName       String
+  clientEmail      String?
+  clientPhone      String?
+  status           String              @default("New")
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  vehicleNo        String?
+  expiryDate       DateTime?
   registrationDate DateTime?
-  gvw             String?
-  address         String?
-  messageTemplate String?
-  existingAgent   String?
-  city            String?
-
-  assignments     LeadAssignment[]
-  whatsappLogs    LeadWhatsAppLog[]
-  statusHistories LeadStatusHistory[]
+  gvw              String?
+  address          String?
+  messageTemplate  String?
+  existingAgent    String?
+  city             String?
+  calls            Call[]
+  claims           Claim[]
+  fitnessWork      FitnessWork[]
+  followUps        FollowUp[]
+  assignments      LeadAssignment[]
+  statusHistories  LeadStatusHistory[]
+  whatsappLogs     LeadWhatsAppLog[]
+  assignee         User?               @relation("AssignedLeads", fields: [assignedTo], references: [id])
+  loans            Loan[]
+  policies         Policy[]
+  quotations       Quotation[]
+  rtoWork          RTOWork[]
+  visits           Visit[]
 
   @@index([status])
   @@index([assignedTo])
@@ -117,21 +109,20 @@ model Lead {
 }
 
 model Policy {
-  id            String   @id @default(uuid()) @db.Uuid
-  leadId        String?  @db.Uuid
-  policyNumber  String   @unique
+  id            String        @id @default(uuid()) @db.Uuid
+  leadId        String?       @db.Uuid
+  policyNumber  String        @unique
   provider      String
   type          String
-  premiumAmount Decimal  @db.Decimal(12, 2)
-  status        String   @default("Active")
+  premiumAmount Decimal       @db.Decimal(12, 2)
+  status        String        @default("Active")
   startDate     DateTime
   endDate       DateTime
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  lead         Lead?         @relation(fields: [leadId], references: [id])
-  claims       Claim[]
-  transactions Transaction[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  claims        Claim[]
+  lead          Lead?         @relation(fields: [leadId], references: [id])
+  transactions  Transaction[]
 
   @@index([status])
   @@index([endDate])
@@ -139,18 +130,17 @@ model Policy {
 }
 
 model Quotation {
-  id        String   @id @default(uuid()) @db.Uuid
-  leadId    String?  @db.Uuid
-  createdBy String?  @db.Uuid
-  amount    Decimal  @db.Decimal(12, 2)
-  status    String   @default("Draft")
-  details   Json?
-  shareToken String? @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  lead    Lead? @relation(fields: [leadId], references: [id])
-  creator User? @relation(fields: [createdBy], references: [id])
+  id         String   @id @default(uuid()) @db.Uuid
+  leadId     String?  @db.Uuid
+  createdBy  String?  @db.Uuid
+  amount     Decimal  @db.Decimal(12, 2)
+  status     String   @default("Draft")
+  details    Json?
+  shareToken String?  @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  creator    User?    @relation(fields: [createdBy], references: [id])
+  lead       Lead?    @relation(fields: [leadId], references: [id])
 
   @@map("quotations")
 }
@@ -164,9 +154,8 @@ model Call {
   duration  Int?
   notes     String?
   createdAt DateTime @default(now())
-
-  lead Lead @relation(fields: [leadId], references: [id])
-  user User @relation(fields: [userId], references: [id])
+  lead      Lead     @relation(fields: [leadId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@map("calls")
 }
@@ -184,9 +173,8 @@ model FollowUp {
   completedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
-  lead     Lead  @relation(fields: [leadId], references: [id])
-  assignee User? @relation(fields: [assignedTo], references: [id])
+  assignee    User?     @relation(fields: [assignedTo], references: [id])
+  lead        Lead      @relation(fields: [leadId], references: [id])
 
   @@index([status])
   @@index([scheduledAt])
@@ -212,10 +200,9 @@ model Claim {
   documents      Json?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-
-  policy   Policy? @relation(fields: [policyId], references: [id])
-  lead     Lead?   @relation(fields: [leadId], references: [id])
-  assignee User?   @relation(fields: [assignedTo], references: [id])
+  assignee       User?     @relation(fields: [assignedTo], references: [id])
+  lead           Lead?     @relation(fields: [leadId], references: [id])
+  policy         Policy?   @relation(fields: [policyId], references: [id])
 
   @@index([status])
   @@map("claims")
@@ -235,9 +222,8 @@ model Transaction {
   description     String?
   date            DateTime @default(now())
   createdAt       DateTime @default(now())
-
-  user   User?   @relation(fields: [userId], references: [id])
-  policy Policy? @relation(fields: [policyId], references: [id])
+  policy          Policy?  @relation(fields: [policyId], references: [id])
+  user            User?    @relation(fields: [userId], references: [id])
 
   @@index([type])
   @@map("transactions")
@@ -253,17 +239,13 @@ model Loan {
   tenureMonths     Int?
   interestRate     Decimal?  @db.Decimal(5, 2)
   status           String    @default("applied")
-  
-  // Conversion Tracking
-  conversionStatus String    @default("Applied") // Applied, Processing, Approved, Disbursed, Rejected
-  
+  conversionStatus String    @default("Applied")
   bankName         String?
   disbursementDate DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
-
-  lead     Lead? @relation(fields: [leadId], references: [id])
-  assignee User? @relation(fields: [assignedTo], references: [id])
+  assignee         User?     @relation(fields: [assignedTo], references: [id])
+  lead             Lead?     @relation(fields: [leadId], references: [id])
 
   @@index([status])
   @@map("loans")
@@ -279,19 +261,15 @@ model RTOWork {
   status         String    @default("pending")
   rtoOffice      String?
   fees           Decimal?  @db.Decimal(12, 2)
-  
-  // Payment Tracking
-  paymentStatus  String    @default("Pending") // Pending, Paid
+  paymentStatus  String    @default("Pending")
   paymentAmount  Decimal?  @db.Decimal(12, 2)
   paymentDate    DateTime?
-  
   dueDate        DateTime?
   completionDate DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-
-  lead     Lead? @relation(fields: [leadId], references: [id])
-  assignee User? @relation(fields: [assignedTo], references: [id])
+  assignee       User?     @relation(fields: [assignedTo], references: [id])
+  lead           Lead?     @relation(fields: [leadId], references: [id])
 
   @@map("rto_work")
 }
@@ -308,9 +286,8 @@ model FitnessWork {
   fees          Decimal?  @db.Decimal(12, 2)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-
-  lead     Lead? @relation(fields: [leadId], references: [id])
-  assignee User? @relation(fields: [assignedTo], references: [id])
+  assignee      User?     @relation(fields: [assignedTo], references: [id])
+  lead          Lead?     @relation(fields: [leadId], references: [id])
 
   @@map("fitness_work")
 }
@@ -323,8 +300,7 @@ model ActivityLog {
   entityId   String   @db.Uuid
   metadata   Json?
   createdAt  DateTime @default(now())
-
-  user User? @relation(fields: [userId], references: [id])
+  user       User?    @relation(fields: [userId], references: [id])
 
   @@index([action])
   @@map("activity_logs")
@@ -338,32 +314,28 @@ model Document {
   filePath   String
   uploadedBy String?  @db.Uuid
   createdAt  DateTime @default(now())
-
-  user User? @relation(fields: [uploadedBy], references: [id])
+  user       User?    @relation(fields: [uploadedBy], references: [id])
 
   @@index([entityType, entityId])
   @@map("documents")
 }
 
 model Customer {
-  id            String   @id @default(uuid()) @db.Uuid
-  leadId        String?  @db.Uuid
-  name          String
-  phone         String
-  email         String?
-  address       String?
-  kycStatus     String   @default("pending")
-
-  // Revenue Tracking
-  totalRevenue  Decimal? @db.Decimal(12, 2)
-  lastSaleDate  DateTime?
-  policyCount   Int      @default(0)
-  loanCount     Int      @default(0)
-  claimCount    Int      @default(0)
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  visits        Visit[]
+  id           String    @id @default(uuid()) @db.Uuid
+  leadId       String?   @db.Uuid
+  name         String
+  phone        String
+  email        String?
+  address      String?
+  kycStatus    String    @default("pending")
+  totalRevenue Decimal?  @db.Decimal(12, 2)
+  lastSaleDate DateTime?
+  policyCount  Int       @default(0)
+  loanCount    Int       @default(0)
+  claimCount   Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  visits       Visit[]
 
   @@index([phone])
   @@index([email])
@@ -371,72 +343,66 @@ model Customer {
 }
 
 model Visit {
-  id          String    @id @default(uuid()) @db.Uuid
-  customerId  String?   @db.Uuid
-  leadId      String?   @db.Uuid
-  userId      String?   @db.Uuid
-  purpose     String
-  scheduledAt DateTime
-  completedAt DateTime?
-  status      String    @default("scheduled")
-  location    String?
-
-  // GPS Tracking
-  startLat    Float?
-  startLng    Float?
-  endLat      Float?
-  endLng      Float?
-  distanceKm  Float?
-  checkInTime DateTime?
+  id           String    @id @default(uuid()) @db.Uuid
+  customerId   String?   @db.Uuid
+  leadId       String?   @db.Uuid
+  userId       String?   @db.Uuid
+  purpose      String
+  scheduledAt  DateTime
+  completedAt  DateTime?
+  status       String    @default("scheduled")
+  location     String?
+  startLat     Float?
+  startLng     Float?
+  endLat       Float?
+  endLng       Float?
+  distanceKm   Float?
+  checkInTime  DateTime?
   checkOutTime DateTime?
-  gpsTrail    Json?     // Array of {lat, lng, timestamp} waypoints
-
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  customer Customer? @relation(fields: [customerId], references: [id])
-  lead     Lead?     @relation(fields: [leadId], references: [id])
-  user     User?     @relation(fields: [userId], references: [id])
+  gpsTrail     Json?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  customer     Customer? @relation(fields: [customerId], references: [id])
+  lead         Lead?     @relation(fields: [leadId], references: [id])
+  user         User?     @relation(fields: [userId], references: [id])
 
   @@map("visits")
 }
 
 model Notification {
-  id         String   @id @default(uuid()) @db.Uuid
-  userId     String   @db.Uuid
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
   title      String
   body       String
-  type       String   @default("info") // info, success, warning, error, action
+  type       String    @default("info")
   entityType String?
   entityId   String?
-  isRead     Boolean  @default(false)
+  isRead     Boolean   @default(false)
   readAt     DateTime?
   data       Json?
-  createdAt  DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead])
   @@map("notifications")
 }
 
 model DataChangeRequest {
-  id           String    @id @default(uuid()) @db.Uuid
-  requestedBy  String    @db.Uuid
-  reviewedBy   String?   @db.Uuid
-  entityType   String
-  entityId     String    @db.Uuid
-  field        String
-  oldValue     String?
-  newValue     String
-  reason       String?
-  status       String    @default("pending")
-  reviewNote   String?
-  requestedAt  DateTime  @default(now())
-  reviewedAt   DateTime?
-
-  requester User  @relation("RequestedBy", fields: [requestedBy], references: [id])
-  reviewer  User? @relation("ReviewedBy", fields: [reviewedBy], references: [id])
+  id          String    @id @default(uuid()) @db.Uuid
+  requestedBy String    @db.Uuid
+  reviewedBy  String?   @db.Uuid
+  entityType  String
+  entityId    String    @db.Uuid
+  field       String
+  oldValue    String?
+  newValue    String
+  reason      String?
+  status      String    @default("pending")
+  reviewNote  String?
+  requestedAt DateTime  @default(now())
+  reviewedAt  DateTime?
+  requester   User      @relation("RequestedBy", fields: [requestedBy], references: [id])
+  reviewer    User?     @relation("ReviewedBy", fields: [reviewedBy], references: [id])
 
   @@index([status])
   @@index([entityType, entityId])
@@ -448,21 +414,19 @@ model LeadAssignment {
   leadId     String   @db.Uuid
   userId     String   @db.Uuid
   assignedAt DateTime @default(now())
-
-  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lead       Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("lead_assignments")
 }
 
 model LeadWhatsAppLog {
-  id        String   @id @default(uuid()) @db.Uuid
-  leadId    String   @db.Uuid
-  userId    String   @db.Uuid
-  sentAt    DateTime @default(now())
-
-  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String   @id @default(uuid()) @db.Uuid
+  leadId String   @db.Uuid
+  userId String   @db.Uuid
+  sentAt DateTime @default(now())
+  lead   Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("lead_whatsapp_logs")
 }
@@ -475,9 +439,8 @@ model LeadStatusHistory {
   newStatus String
   notes     String?
   changedAt DateTime @default(now())
-
-  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("lead_status_history")
 }
@@ -494,19 +457,16 @@ model PredefinedResponse {
   @@map("predefined_responses")
 }
 
-// ── HR Module ──────────────────────────────────────────────────────────────
-
 model Attendance {
   id           String    @id @default(uuid()) @db.Uuid
   userId       String    @db.Uuid
   date         DateTime  @db.Date
   checkInTime  DateTime?
   checkOutTime DateTime?
-  status       String    @default("present") // present | absent | half_day | late
+  status       String    @default("present")
   notes        String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-
   user         User      @relation(fields: [userId], references: [id])
 
   @@unique([userId, date])
@@ -514,45 +474,41 @@ model Attendance {
 }
 
 model LeaveRequest {
-  id          String   @id @default(uuid()) @db.Uuid
-  userId      String   @db.Uuid
-  type        String   // sick | casual | earned | unpaid
-  startDate   DateTime @db.Date
-  endDate     DateTime @db.Date
-  days        Int      @default(1)
-  reason      String?
-  status      String   @default("pending") // pending | approved | rejected
-  approvedBy  String?  @db.Uuid
-  approvedAt  DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  user        User     @relation("LeaveRequests", fields: [userId], references: [id])
-  approver    User?    @relation("LeaveApprovals", fields: [approvedBy], references: [id])
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  type       String
+  startDate  DateTime  @db.Date
+  endDate    DateTime  @db.Date
+  days       Int       @default(1)
+  reason     String?
+  status     String    @default("pending")
+  approvedBy String?   @db.Uuid
+  approvedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  approver   User?     @relation("LeaveApprovals", fields: [approvedBy], references: [id])
+  user       User      @relation("LeaveRequests", fields: [userId], references: [id])
 
   @@map("leave_requests")
 }
 
 model Salary {
-  id          String   @id @default(uuid()) @db.Uuid
-  userId      String   @db.Uuid
-  month       Int
-  year        Int
-  baseAmount  Float    @default(0)
-  deductions  Float    @default(0)
-  netAmount   Float    @default(0)
-  status      String   @default("Pending") // Pending | Paid
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  user        User     @relation(fields: [userId], references: [id])
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  month      Int
+  year       Int
+  baseAmount Float    @default(0)
+  deductions Float    @default(0)
+  netAmount  Float    @default(0)
+  status     String   @default("Pending")
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, month, year])
   @@map("salaries")
 }
-
-// ── Rate Calculator ────────────────────────────────────────────────────────
 
 model RateTable {
   id          String     @id @default(uuid()) @db.Uuid
@@ -562,22 +518,20 @@ model RateTable {
   isActive    Boolean    @default(true)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
-
   rules       RateRule[]
 
   @@map("rate_tables")
 }
 
 model RateRule {
-  id            String   @id @default(uuid()) @db.Uuid
-  rateTableId   String   @db.Uuid
-  condition     String   // JSON rule condition
-  modifierType  String   // percentage_discount | flat_add | etc
-  modifierValue Float    @default(0)
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
+  id            String    @id @default(uuid()) @db.Uuid
+  rateTableId   String    @db.Uuid
+  condition     String
+  modifierType  String
+  modifierValue Float     @default(0)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   rateTable     RateTable @relation(fields: [rateTableId], references: [id])
 
   @@map("rate_rules")
@@ -587,7 +541,7 @@ model Addon {
   id          String   @id @default(uuid()) @db.Uuid
   name        String
   description String?
-  priceType   String   @default("flat") // flat | percentage
+  priceType   String   @default("flat")
   priceValue  Float    @default(0)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -595,3 +549,14 @@ model Addon {
 
   @@map("addons")
 }
+
+model SystemSetting {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}
+

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
 export async function GET(req: NextRequest) {
-  const { error } = await validateAuth(req)
+  const { error } = await validateAuth(req, 'claims.view')
   if (error) return error
 
   try {
@@ -32,21 +32,37 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { error } = await validateAuth(req)
+  const { error } = await validateAuth(req, 'claims.create')
   if (error) return error
 
   try {
     const body = await req.json()
+    
+    // Fetch policy/lead info if not provided
+    let { customerName, policyNumber, vehicleNumber, leadId } = body
+    if (body.policy_id && (!customerName || !policyNumber)) {
+      const policy = await prisma.policy.findUnique({
+        where: { id: body.policy_id },
+        include: { lead: true }
+      })
+      if (policy) {
+        customerName = customerName || policy.lead?.clientName || 'Unknown'
+        policyNumber = policyNumber || policy.policyNumber
+        vehicleNumber = vehicleNumber || policy.lead?.vehicleNo
+        leadId = leadId || policy.leadId
+      }
+    }
+
     const claim = await prisma.claim.create({
       data: {
         policyId: body.policy_id,
-        leadId: body.lead_id,
+        leadId: leadId,
         assignedTo: body.assigned_to,
-        customerName: body.customer_name,
-        policyNumber: body.policy_number,
-        vehicleNumber: body.vehicle_number,
-        claimType: body.claim_type,
-        claimAmount: body.claim_amount,
+        customerName: customerName || 'Unknown',
+        policyNumber: policyNumber,
+        vehicleNumber: vehicleNumber,
+        claimType: body.type || body.claimType,
+        claimAmount: body.amount || body.claimAmount,
         incidentDate: body.incident_date ? new Date(body.incident_date) : null,
         status: 'filed'
       }
@@ -54,6 +70,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(claim)
   } catch (error) {
     console.error('Claim POST Error:', error)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
+}
+export async function PATCH(req: NextRequest) {
+  const { error } = await validateAuth(req, 'claims.edit')
+  if (error) return error
+
+  try {
+    const data = await req.json()
+    const { id, ...updates } = data
+
+    if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
+
+    if (updates.incidentDate) updates.incidentDate = new Date(updates.incidentDate)
+    if (updates.settledDate) updates.settledDate = new Date(updates.settledDate)
+
+    const claim = await prisma.claim.update({
+      where: { id },
+      data: updates
+    })
+    return NextResponse.json(claim)
+  } catch (error) {
+    console.error('Claim PATCH Error:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }

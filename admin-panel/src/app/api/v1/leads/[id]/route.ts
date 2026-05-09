@@ -6,15 +6,25 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { error: authError } = await validateAuth(req, 'lead.view')
+  if (authError) return authError
+
   try {
     const { id } = await params
+    
+    // Validate UUID format to prevent Prisma/DB crash
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(id)) {
+      return NextResponse.json({ error: 'Invalid Lead ID format' }, { status: 400 })
+    }
+
     const lead = await prisma.lead.findUnique({
       where: { id },
       include: {
         assignee: { select: { fullName: true } },
         policies: true,
         quotations: true,
-        calls: { orderBy: { createdAt: 'desc' } },
+        claims: true,
         followUps: { orderBy: { scheduledAt: 'asc' } }
       }
     })
@@ -24,9 +34,9 @@ export async function GET(
     }
 
     return NextResponse.json(lead)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Lead Detail GET Error:', error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal Server Error', message: error.message }, { status: 500 })
   }
 }
 

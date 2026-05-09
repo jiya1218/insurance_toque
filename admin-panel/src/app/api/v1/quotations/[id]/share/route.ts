@@ -7,7 +7,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { error } = await validateAuth(req, 'quotations.update')
+  const { error } = await validateAuth(req, 'quotation.share')
   if (error) return error
 
   try {

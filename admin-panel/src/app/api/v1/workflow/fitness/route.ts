@@ -41,3 +41,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
+export async function PATCH(req: NextRequest) {
+  const { error } = await validateAuth(req, 'fitness.edit')
+  if (error) return error
+
+  try {
+    const data = await req.json()
+    const { id, ...updates } = data
+
+    if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
+
+    if (updates.testDate) updates.testDate = new Date(updates.testDate)
+    if (updates.expiryDate) updates.expiryDate = new Date(updates.expiryDate)
+
+    const fitness = await prisma.fitnessWork.update({
+      where: { id },
+      data: updates
+    })
+    return NextResponse.json(fitness)
+  } catch (error) {
+    console.error('Fitness PATCH Error:', error)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
+}

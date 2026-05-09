@@ -5,12 +5,18 @@ import { fetchApi } from '@/lib/api'
 import { Search, Filter, Plus, MoreVertical, ExternalLink, Download, Upload, CheckCircle, AlertCircle, Users } from 'lucide-react'
 
 export default function LeadsPage() {
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+  const initialSearch = searchParams?.get('search') || ''
+
   const [leads, setLeads] = useState<any[]>([])
   const [stats, setStats] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(initialSearch)
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState<any>(null)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [newLead, setNewLead] = useState({ clientName: '', clientPhone: '', vehicleNo: '', clientEmail: '' })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -46,18 +52,42 @@ export default function LeadsPage() {
       const result = await fetchApi('/api/v1/leads/import', {
         method: 'POST',
         body: formData,
-        headers: {} // fetchApi will handle auth
       })
       
       setImportResult(result.stats)
-      alert(`Imported ${result.stats.assignedCount} leads successfully!`)
+      alert(`Import Summary:\n- Total Rows: ${result.stats.total}\n- Imported: ${result.stats.assignedCount}\n- Errors: ${result.stats.errors}\n- Duplicates: ${result.stats.duplicates}`)
       fetchData()
     } catch (err: any) {
+      // If it's a fetchApi error, it already has the message
       alert(err.message || 'Import failed')
     } finally {
       setImporting(false)
     }
   }
+
+  const handleAddLead = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    try {
+      await fetchApi('/api/v1/leads', {
+        method: 'POST',
+        body: JSON.stringify(newLead)
+      })
+      setShowAddModal(false)
+      setNewLead({ clientName: '', clientPhone: '', vehicleNo: '', clientEmail: '' })
+      fetchData()
+    } catch (err: any) {
+      alert(err.message || 'Failed to add lead')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const filteredLeads = leads.filter(l => 
+    l.clientName?.toLowerCase().includes(search.toLowerCase()) ||
+    l.vehicleNo?.toLowerCase().includes(search.toLowerCase()) ||
+    l.clientPhone?.includes(search)
+  )
 
   return (
     <AdminLayout>
@@ -81,12 +111,81 @@ export default function LeadsPage() {
             <Upload size={16} />
             {importing ? 'Importing...' : 'Import Leads'}
           </label>
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all shadow-md">
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all shadow-md"
+          >
             <Plus size={18} />
             New Lead
           </button>
         </div>
       </div>
+
+      {/* Add Lead Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl">
+            <h2 className="text-xl font-bold mb-6">Add New Lead</h2>
+            <form onSubmit={handleAddLead} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Owner Name *</label>
+                <input 
+                  required
+                  type="text" 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm"
+                  value={newLead.clientName}
+                  onChange={e => setNewLead({...newLead, clientName: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Phone Number *</label>
+                <input 
+                  required
+                  type="text" 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm"
+                  value={newLead.clientPhone}
+                  onChange={e => setNewLead({...newLead, clientPhone: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Vehicle Number *</label>
+                <input 
+                  required
+                  type="text" 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm"
+                  value={newLead.vehicleNo}
+                  onChange={e => setNewLead({...newLead, vehicleNo: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email (Optional)</label>
+                <input 
+                  type="email" 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm"
+                  value={newLead.clientEmail}
+                  onChange={e => setNewLead({...newLead, clientEmail: e.target.value})}
+                />
+              </div>
+              <div className="flex gap-3 mt-8">
+                <button 
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl text-sm font-bold"
+                >
+                  Cancel
+                </button>
+                <button 
+                  disabled={isSubmitting}
+                  type="submit"
+                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-200"
+                >
+                  {isSubmitting ? 'Saving...' : 'Save Lead'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
@@ -130,9 +229,9 @@ export default function LeadsPage() {
             <tbody className="divide-y divide-gray-50">
               {isLoading ? (
                 <tr><td colSpan={5} className="px-6 py-10 text-center text-gray-500">Loading...</td></tr>
-              ) : leads.length === 0 ? (
+              ) : filteredLeads.length === 0 ? (
                 <tr><td colSpan={5} className="px-6 py-10 text-center text-gray-500">No leads found.</td></tr>
-              ) : leads.map((lead) => (
+              ) : filteredLeads.map((lead) => (
                 <tr key={lead.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="font-bold text-gray-900">{lead.clientName}</div>

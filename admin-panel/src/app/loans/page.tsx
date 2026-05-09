@@ -2,14 +2,23 @@
 import React, { useEffect, useState } from 'react'
 import AdminLayout from '@/components/layout/AdminLayout'
 import { fetchApi } from '@/lib/api'
-import { Landmark, FileCheck, ArrowRight, User as UserIcon, Clock } from 'lucide-react'
+import { Landmark, FileCheck, ArrowRight, User as UserIcon, Clock, Plus, X } from 'lucide-react'
 
 export default function LoansPage() {
   const [loans, setLoans] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [leads, setLeads] = useState<any[]>([])
+  const [newLoan, setNewLoan] = useState({
+    lead_id: '',
+    amount: '',
+    loan_type: 'Vehicle Loan',
+    bank_name: ''
+  })
 
   useEffect(() => {
     fetchLoans()
+    fetchLeads()
   }, [])
 
   const fetchLoans = async () => {
@@ -24,14 +33,40 @@ export default function LoansPage() {
     }
   }
 
+  const fetchLeads = async () => {
+    try {
+      const data = await fetchApi('/api/v1/leads?limit=100')
+      setLeads(data.leads || [])
+    } catch {}
+  }
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const selectedLead = leads.find(l => l.id === newLoan.lead_id)
+      await fetchApi('/api/v1/finance/loans', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...newLoan,
+          customer_name: selectedLead?.clientName,
+          amount: parseFloat(newLoan.amount)
+        })
+      })
+      setIsModalOpen(false)
+      fetchLoans()
+      alert('Loan application created!')
+    } catch (error: any) {
+      alert(error.message || 'Failed to create')
+    }
+  }
+
   const handleUpdateStatus = async (id: string, updates: any) => {
     try {
-      const res = await fetch('/api/v1/finance/loans', {
+      await fetchApi('/api/v1/finance/loans', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ...updates })
       })
-      if (res.ok) fetchLoans()
+      fetchLoans()
     } catch (error) {
       alert('Failed to update loan')
     }
@@ -44,13 +79,16 @@ export default function LoansPage() {
           <h1 className="text-2xl font-bold text-gray-900">Loans & Finance</h1>
           <p className="text-sm text-gray-500 mt-1">Manage vehicle and personal loan applications.</p>
         </div>
-        <button className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all shadow-md shadow-blue-100">
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all shadow-md shadow-blue-100"
+        >
+          <Plus size={18} />
           New Loan Application
         </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-        {/* Loan Queue */}
         <div className="lg:col-span-2 space-y-4">
           <h3 className="font-bold text-gray-900 px-1">Active Applications</h3>
           {isLoading ? (
@@ -100,7 +138,6 @@ export default function LoansPage() {
           ))}
         </div>
 
-        {/* Quick Stats & Banks */}
         <div className="space-y-6">
           <div className="bg-blue-600 p-6 rounded-2xl text-white shadow-lg shadow-blue-200">
             <h4 className="font-bold text-lg">Loan Lifecycle</h4>
@@ -135,6 +172,52 @@ export default function LoansPage() {
           </div>
         </div>
       </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <h3 className="font-bold text-gray-900">New Loan Application</h3>
+              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-200 rounded-full transition-all">
+                <X size={20} className="text-gray-500" />
+              </button>
+            </div>
+            <form onSubmit={handleCreate} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Select Lead</label>
+                <select required value={newLoan.lead_id} onChange={e => setNewLoan({...newLoan, lead_id: e.target.value})}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="">Choose a lead...</option>
+                  {leads.map(l => <option key={l.id} value={l.id}>{l.clientName} ({l.vehicleNo})</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Loan Type</label>
+                <select value={newLoan.loan_type} onChange={e => setNewLoan({...newLoan, loan_type: e.target.value})}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none">
+                  <option>Vehicle Loan</option>
+                  <option>Personal Loan</option>
+                  <option>Business Loan</option>
+                  <option>Refinance</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Loan Amount (INR)</label>
+                <input required type="number" value={newLoan.amount} onChange={e => setNewLoan({...newLoan, amount: e.target.value})}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Preferred Bank</label>
+                <input value={newLoan.bank_name} onChange={e => setNewLoan({...newLoan, bank_name: e.target.value})}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none" placeholder="e.g. HDFC Bank" />
+              </div>
+              <button type="submit" className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg mt-2">
+                Submit Application
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   )
 }

@@ -24,25 +24,19 @@ export async function GET(
       return NextResponse.json({ error: 'Quotation not found' }, { status: 404 })
     }
 
-    // 2. Generate PDF stream
-    const stream = await renderToStream(<QuotationPDF data={quotation} />)
+    // 2. Generate PDF
+    const { pdf } = await import('@react-pdf/renderer')
+    const buffer = await pdf(<QuotationPDF data={quotation} />).toBuffer()
     
-    // 3. Convert stream to buffer
-    const chunks: any[] = []
-    for await (const chunk of stream as any) {
-      chunks.push(chunk)
-    }
-    const buffer = Buffer.concat(chunks)
-
-    // 4. Return PDF
+    // 3. Return PDF
     return new NextResponse(buffer, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="quotation_${id.slice(0, 8)}.pdf"`
       }
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('PDF Generation Error:', error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal Server Error', message: error.message }, { status: 500 })
   }
 }

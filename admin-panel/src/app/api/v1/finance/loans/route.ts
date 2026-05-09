@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma'
 import { validateAuth } from '@/lib/auth-guard'
 
 export async function GET(req: NextRequest) {
-  const { error } = await validateAuth(req, 'finance.view')
+  const { error } = await validateAuth(req, 'loan.view')
   if (error) return error
 
   try {
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { error } = await validateAuth(req, 'finance.create')
+  const { error } = await validateAuth(req, 'loan.create')
   if (error) return error
 
   try {
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const { error } = await validateAuth(req, 'finance.update')
+  const { error } = await validateAuth(req, 'loan.edit')
   if (error) return error
 
   try {

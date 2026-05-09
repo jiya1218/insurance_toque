@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const { error } = await validateAuth(req, 'rto.update')
+  const { error } = await validateAuth(req, 'rto.edit')
   if (error) return error
 
   try {

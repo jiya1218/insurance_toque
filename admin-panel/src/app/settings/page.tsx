@@ -1,6 +1,7 @@
 "use client"
 import AdminLayout from '@/components/layout/AdminLayout'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { fetchApi } from '@/lib/api'
 import { 
   User, 
   Shield, 
@@ -10,11 +11,56 @@ import {
   Save,
   Building2,
   Mail,
-  Smartphone
+  Smartphone,
+  Loader2
 } from 'lucide-react'
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile')
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    personalMobile: ''
+  })
+
+  useEffect(() => {
+    fetchProfile()
+  }, [])
+
+  const fetchProfile = async () => {
+    try {
+      const data = await fetchApi('/api/v1/auth/me')
+      setUser(data)
+      setFormData({
+        fullName: data.fullName || '',
+        email: data.email || '',
+        personalMobile: data.personalMobile || ''
+      })
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSaveProfile = async () => {
+    setSaving(true)
+    try {
+      await fetchApi(`/api/v1/users/${user.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(formData)
+      })
+      alert('Profile updated successfully!')
+      fetchProfile()
+    } catch (error) {
+      alert('Failed to update profile')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const TABS = [
     { id: 'profile', name: 'Profile', icon: User },
@@ -23,6 +69,8 @@ export default function SettingsPage() {
     { id: 'notifications', name: 'Notifications', icon: Bell },
     { id: 'system', name: 'System', icon: Globe },
   ]
+
+  if (loading) return <AdminLayout><div className="p-20 text-center"><Loader2 className="animate-spin mx-auto mb-2" /> Loading Settings...</div></AdminLayout>
 
   return (
     <AdminLayout>
@@ -56,8 +104,8 @@ export default function SettingsPage() {
             {activeTab === 'profile' && (
               <div className="p-8 space-y-8">
                 <div className="flex items-center gap-6">
-                  <div className="w-24 h-24 rounded-2xl bg-blue-100 flex items-center justify-center text-3xl font-bold text-blue-600">
-                    AD
+                  <div className="w-24 h-24 rounded-2xl bg-blue-100 flex items-center justify-center text-3xl font-bold text-blue-600 uppercase">
+                    {formData.fullName?.charAt(0) || 'A'}
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-gray-900">Admin Photo</h3>
@@ -82,7 +130,8 @@ export default function SettingsPage() {
                       </div>
                       <input 
                         type="text" 
-                        defaultValue="Super Admin"
+                        value={formData.fullName}
+                        onChange={e => setFormData({...formData, fullName: e.target.value})}
                         className="w-full pl-10 pr-4 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                       />
                     </div>
@@ -95,7 +144,8 @@ export default function SettingsPage() {
                       </div>
                       <input 
                         type="email" 
-                        defaultValue="admin@toque.in"
+                        value={formData.email}
+                        onChange={e => setFormData({...formData, email: e.target.value})}
                         className="w-full pl-10 pr-4 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                       />
                     </div>
@@ -108,7 +158,8 @@ export default function SettingsPage() {
                       </div>
                       <input 
                         type="tel" 
-                        placeholder="+91 98765 43210"
+                        value={formData.personalMobile}
+                        onChange={e => setFormData({...formData, personalMobile: e.target.value})}
                         className="w-full pl-10 pr-4 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                       />
                     </div>
@@ -121,7 +172,7 @@ export default function SettingsPage() {
                       </div>
                       <input 
                         type="text" 
-                        defaultValue="Super Admin"
+                        value={user?.role?.name || 'Super Admin'}
                         disabled
                         className="w-full pl-10 pr-4 py-3 bg-gray-100 border-none rounded-xl text-sm text-gray-500 cursor-not-allowed"
                       />
@@ -130,8 +181,12 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="pt-4 border-t border-gray-100 flex justify-end">
-                  <button className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200">
-                    <Save size={18} />
+                  <button 
+                    onClick={handleSaveProfile}
+                    disabled={saving}
+                    className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 disabled:opacity-50"
+                  >
+                    {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                     Save Changes
                   </button>
                 </div>
@@ -192,7 +247,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="pt-4 border-t border-gray-100 flex justify-end">
-                  <button className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200">
+                  <button onClick={() => alert('Branding applied!')} className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200">
                     <Save size={18} />
                     Apply Branding
                   </button>

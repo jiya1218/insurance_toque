@@ -10,7 +10,14 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const view = searchParams.get('view') || 'auto'
-    const today = new Date(); today.setHours(0, 0, 0, 0)
+    
+    // Adjust 'today' for IST (+5:30)
+    const now = new Date()
+    const today = new Date(now.getTime() + (5.5 * 60 * 60 * 1000))
+    today.setUTCHours(0, 0, 0, 0)
+    // Shift back to get the UTC equivalent of IST midnight
+    const istMidnightInUtc = new Date(today.getTime() - (5.5 * 60 * 60 * 1000))
+    
     const userId = context!.userId
     const role = context!.role
     const perms = context!.permissions
@@ -26,9 +33,9 @@ export async function GET(req: NextRequest) {
     if (effectiveView === 'agent') {
       const [myLeads, myLeadsToday, myFollowupsPending, myCallsToday, myQuotations] = await Promise.all([
         prisma.lead.count({ where: { assignedTo: userId } }),
-        prisma.lead.count({ where: { assignedTo: userId, createdAt: { gte: today } } }),
+        prisma.lead.count({ where: { assignedTo: userId, createdAt: { gte: istMidnightInUtc } } }),
         prisma.followUp.count({ where: { assignedTo: userId, status: 'pending' } }),
-        prisma.call.count({ where: { userId, createdAt: { gte: today } } }),
+        prisma.call.count({ where: { userId, createdAt: { gte: istMidnightInUtc } } }),
         prisma.quotation.count({ where: { createdBy: userId } })
       ])
       return NextResponse.json({
@@ -86,7 +93,7 @@ export async function GET(req: NextRequest) {
       totalCustomers, todayVisits, totalUsers
     ] = await Promise.all([
       prisma.lead.count(),
-      prisma.lead.count({ where: { createdAt: { gte: today } } }),
+      prisma.lead.count({ where: { createdAt: { gte: istMidnightInUtc } } }),
       prisma.policy.count(),
       prisma.policy.count({ where: { status: 'Active' } }),
       prisma.quotation.count(),
@@ -98,7 +105,7 @@ export async function GET(req: NextRequest) {
       prisma.fitnessWork.count({ where: { status: 'pending' } }),
       prisma.loan.count({ where: { status: { in: ['applied', 'under_review', 'approved', 'disbursed'] } } }),
       prisma.customer.count(),
-      prisma.visit.count({ where: { scheduledAt: { gte: today } } }),
+      prisma.visit.count({ where: { scheduledAt: { gte: istMidnightInUtc } } }),
       prisma.user.count({ where: { isActive: true } })
     ])
 

@@ -9,8 +9,31 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const type = searchParams.get('type') || 'summary'
-    const from = searchParams.get('from') ? new Date(searchParams.get('from')!) : new Date(new Date().setMonth(new Date().getMonth() - 3))
-    const to = searchParams.get('to') ? new Date(searchParams.get('to')!) : new Date()
+    
+    const parseDate = (dateStr: string | null, isEnd: boolean) => {
+      if (!dateStr) return null
+      // Try parsing standard YYYY-MM-DD
+      let d = new Date(dateStr)
+      
+      // If invalid or year is very small (could be DD-MM-YYYY), try manual split
+      if (isNaN(d.getTime()) || d.getFullYear() < 2000) {
+        const parts = dateStr.split(/[-/]/)
+        if (parts.length === 3) {
+          // Try DD-MM-YYYY
+          const dmy = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`)
+          if (!isNaN(dmy.getTime())) d = dmy
+        }
+      }
+      
+      if (isNaN(d.getTime())) return null
+      
+      if (isEnd) d.setHours(23, 59, 59, 999)
+      else d.setHours(0, 0, 0, 0)
+      return d
+    }
+
+    let from = parseDate(searchParams.get('from'), false) || new Date(new Date().setMonth(new Date().getMonth() - 3))
+    let to = parseDate(searchParams.get('to'), true) || new Date()
 
     if (type === 'revenue') {
       const transactions = await prisma.transaction.findMany({
@@ -64,7 +87,12 @@ export async function GET(req: NextRequest) {
       prisma.loan.count({ where: { createdAt: { gte: from, lte: to } } }),
       prisma.user.count({ where: { isActive: true } })
     ])
-    return NextResponse.json({ type: 'summary', from, to, leads, policies, claims, loans, active_users: users })
+    return NextResponse.json({ 
+      type: 'summary', 
+      from: from.toISOString(), 
+      to: to.toISOString(), 
+      leads, policies, claims, loans, active_users: users 
+    })
   } catch (err: any) {
     console.error('Reports API Error:', err)
     return NextResponse.json({ error: err.message }, { status: 500 })

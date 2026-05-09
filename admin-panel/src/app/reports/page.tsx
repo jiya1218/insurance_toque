@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import AdminLayout from '@/components/layout/AdminLayout'
 import { DownloadCloud, FileText, Users2, BarChart2, RefreshCw } from 'lucide-react'
+import { fetchApi } from '@/lib/api'
 
 const REPORT_TYPES = [
   {
@@ -44,8 +45,7 @@ export default function ReportsPage() {
 
   const download = async (type: string) => {
     const params = new URLSearchParams({ type, from, to })
-    const res = await fetch(`/api/v1/reports?${params}`)
-    const data = await res.json()
+    const data = await fetchApi(`/api/v1/reports?${params}`)
 
     // Convert to CSV
     const records = data.records || []
@@ -65,11 +65,12 @@ export default function ReportsPage() {
     setPreview(null)
     try {
       const params = new URLSearchParams({ type, from, to })
-      const res = await fetch(`/api/v1/reports?${params}`)
-      const data = await res.json()
+      const data = await fetchApi(`/api/v1/reports?${params}`)
       setPreview(data)
       setPreviewType(type)
-    } catch {}
+    } catch (err: any) {
+      alert(err.message || 'Failed to load preview')
+    }
     setLoading(null)
   }
 
@@ -133,7 +134,7 @@ export default function ReportsPage() {
           ))}
         </div>
 
-        {/* Preview Table */}
+        {/* Preview Area */}
         {preview && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
@@ -141,39 +142,103 @@ export default function ReportsPage() {
               <div className="flex gap-4 text-sm text-gray-500">
                 {preview.total !== undefined && <span><strong>{preview.total}</strong> records</span>}
                 {preview.total_income !== undefined && (
-                  <span>Revenue: <strong className="text-green-600">₹{(preview.total_income / 100000).toFixed(2)}L</strong></span>
+                  <span>Revenue: <strong className="text-green-600">₹{preview.net.toLocaleString()}</strong></span>
                 )}
               </div>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50">
-                    {preview.records?.[0] && Object.keys(preview.records[0]).slice(0, 6).map((h: string) => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider capitalize">
-                        {h.replace(/_/g, ' ')}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {(preview.records || []).slice(0, 15).map((row: any, i: number) => (
-                    <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                      {Object.values(row).slice(0, 6).map((val: any, j: number) => (
-                        <td key={j} className="px-4 py-3 text-gray-700 text-xs">
-                          {typeof val === 'object' ? (val?.name || JSON.stringify(val)) : String(val ?? '—')}
-                        </td>
-                      ))}
+            
+            {(!preview.records || preview.records.length === 0) ? (
+              <div className="p-20 text-center">
+                <p className="text-gray-500">No records found for the selected period.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-gray-50">
+                      {previewType === 'leads' && (
+                        <>
+                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
+                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Name</th>
+                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Vehicle</th>
+                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Agent</th>
+                        </>
+                      )}
+                      {previewType === 'revenue' && (
+                        <>
+                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
+                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
+                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Category</th>
+                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Amount</th>
+                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Method</th>
+                        </>
+                      )}
+                      {previewType === 'hr' && (
+                        <>
+                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Name</th>
+                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Email</th>
+                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Role</th>
+                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Joined</th>
+                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                        </>
+                      )}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              {(preview.records || []).length > 15 && (
-                <p className="text-center py-4 text-xs text-gray-400">
-                  Showing 15 of {preview.records.length} rows. Download CSV for full data.
-                </p>
-              )}
-            </div>
+                  </thead>
+                  <tbody>
+                    {preview.records.slice(0, 15).map((row: any, i: number) => (
+                      <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                        {previewType === 'leads' && (
+                          <>
+                            <td className="px-4 py-3 text-gray-700 text-xs">{new Date(row.createdAt).toLocaleDateString()}</td>
+                            <td className="px-4 py-3 text-gray-700 text-xs font-medium">{row.clientName}</td>
+                            <td className="px-4 py-3 text-gray-700 text-xs">{row.vehicleNo || '—'}</td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                row.status === 'New' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+                              }`}>
+                                {row.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-gray-700 text-xs">{row.assignee?.fullName || 'Unassigned'}</td>
+                          </>
+                        )}
+                        {previewType === 'revenue' && (
+                          <>
+                            <td className="px-4 py-3 text-gray-700 text-xs">{new Date(row.date).toLocaleDateString()}</td>
+                            <td className="px-4 py-3">
+                              <span className={`capitalize ${row.type === 'income' ? 'text-green-600' : 'text-red-600'} font-bold`}>
+                                {row.type}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-gray-700 text-xs">{row.category}</td>
+                            <td className="px-4 py-3 text-gray-700 text-xs font-bold">₹{Number(row.amount).toLocaleString()}</td>
+                            <td className="px-4 py-3 text-gray-700 text-xs">{row.paymentMethod}</td>
+                          </>
+                        )}
+                        {previewType === 'hr' && (
+                          <>
+                            <td className="px-4 py-3 text-gray-700 text-xs font-medium">{row.fullName}</td>
+                            <td className="px-4 py-3 text-gray-700 text-xs">{row.email}</td>
+                            <td className="px-4 py-3 text-gray-700 text-xs">{row.role?.name}</td>
+                            <td className="px-4 py-3 text-gray-700 text-xs">{row.joiningDate ? new Date(row.joiningDate).toLocaleDateString() : '—'}</td>
+                            <td className="px-4 py-3 text-gray-700 text-xs">
+                              <span className={`w-2 h-2 rounded-full inline-block mr-2 ${row.isActive ? 'bg-green-500' : 'bg-red-500'}`} />
+                              {row.isActive ? 'Active' : 'Inactive'}
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {preview.records.length > 15 && (
+                  <p className="text-center py-4 text-xs text-gray-400">
+                    Showing 15 of {preview.records.length} rows. Download CSV for full data.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

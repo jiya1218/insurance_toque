@@ -35,6 +35,9 @@ export async function PATCH(
     const user = await prisma.user.update({
       where: { id },
       data: {
+        ...(body.fullName !== undefined && { fullName: body.fullName }),
+        ...(body.email !== undefined && { email: body.email }),
+        ...(body.personalMobile !== undefined && { personalMobile: body.personalMobile }),
         ...(roleId !== undefined && { roleId: roleId || null }),
         ...(isActive !== undefined && { isActive }),
         ...(extraPermissionIds !== undefined && {
