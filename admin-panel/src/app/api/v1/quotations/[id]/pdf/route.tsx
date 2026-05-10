@@ -23,15 +23,16 @@ export async function GET(
       return NextResponse.json({ error: 'Quotation not found' }, { status: 404 })
     }
 
-    // 2. Generate PDF using dynamic import to avoid SSR issues with canvas/fonts
+    // 2. Generate PDF using Web APIs (Blob/ArrayBuffer) for maximum compatibility with Next.js 15
     const { pdf } = await import('@react-pdf/renderer')
-    const buffer = await pdf(<QuotationPDF data={quotation} />).toBuffer()
     
-    // 3. Return PDF
-    // Convert Node Buffer to Uint8Array for compatibility with NextResponse in Next.js 15/Vercel
-    const pdfBody = new Uint8Array(buffer)
+    // Using toBlob() + arrayBuffer() is the most robust way to handle PDF data in Next.js 15
+    // as it avoids conflicts between Node.js Streams and Web Streams during the build.
+    const blob = await pdf(<QuotationPDF data={quotation} />).toBlob()
+    const pdfArrayBuffer = await blob.arrayBuffer()
 
-    return new NextResponse(pdfBody, {
+    // 3. Return PDF
+    return new NextResponse(pdfArrayBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="quotation_${id.slice(0, 8)}.pdf"`
