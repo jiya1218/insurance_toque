@@ -10,18 +10,22 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const type = searchParams.get('type') || 'summary'
     
+    // Robust date parsing for reports
     const parseDate = (dateStr: string | null, isEnd: boolean) => {
       if (!dateStr) return null
-      // Try parsing standard YYYY-MM-DD
+      
+      // Handle both YYYY-MM-DD and potential other common formats
       let d = new Date(dateStr)
       
-      // If invalid or year is very small (could be DD-MM-YYYY), try manual split
-      if (isNaN(d.getTime()) || d.getFullYear() < 2000) {
+      if (isNaN(d.getTime())) {
+        // Backup: Try manual parse if browser Date fails
         const parts = dateStr.split(/[-/]/)
         if (parts.length === 3) {
-          // Try DD-MM-YYYY
-          const dmy = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`)
-          if (!isNaN(dmy.getTime())) d = dmy
+          if (parts[0].length === 4) { // YYYY-MM-DD
+            d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
+          } else { // DD-MM-YYYY
+            d = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]))
+          }
         }
       }
       
@@ -32,12 +36,30 @@ export async function GET(req: NextRequest) {
       return d
     }
 
-    let from = parseDate(searchParams.get('from'), false) || new Date(new Date().setMonth(new Date().getMonth() - 3))
-    let to = parseDate(searchParams.get('to'), true) || new Date()
+    // Get dates from 'from'/'to' or 'startDate'/'endDate'
+    const fromStr = searchParams.get('from') || searchParams.get('startDate')
+    const toStr = searchParams.get('to') || searchParams.get('endDate')
 
+    let from = parseDate(fromStr, false)
+    let to = parseDate(toStr, true)
+
+    // Defaults if NOT provided (last 30 days instead of 3 months for tighter default)
+    if (!from) {
+      from = new Date()
+      from.setDate(from.getDate() - 30)
+      from.setHours(0, 0, 0, 0)
+    }
+    if (!to) {
+      to = new Date()
+      to.setHours(23, 59, 59, 999)
+    }
+
+    const strictDateFilter = { gte: from, lte: to }
+
+    // Revenue Report
     if (type === 'revenue') {
       const transactions = await prisma.transaction.findMany({
-        where: { date: { gte: from, lte: to } },
+        where: { date: strictDateFilter },
         orderBy: { date: 'asc' },
         select: {
           id: true, type: true, category: true,
@@ -46,29 +68,43 @@ export async function GET(req: NextRequest) {
       })
       const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0)
       const totalExpense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0)
-      return NextResponse.json({ type: 'revenue', total_income: totalIncome, total_expense: totalExpense, net: totalIncome - totalExpense, records: transactions })
+      return NextResponse.json({ 
+        type: 'revenue', 
+        from: from.toISOString(),
+        to: to.toISOString(),
+        total_income: totalIncome, 
+        total_expense: totalExpense, 
+        net: totalIncome - totalExpense, 
+        records: transactions 
+      })
     }
 
+    // Leads Report
     if (type === 'leads') {
       const leads = await prisma.lead.findMany({
-        where: { createdAt: { gte: from, lte: to } },
+        where: { createdAt: strictDateFilter },
         orderBy: { createdAt: 'desc' },
         include: { assignee: { select: { fullName: true } } }
       })
       const byStatus = await prisma.lead.groupBy({
         by: ['status'],
-        where: { createdAt: { gte: from, lte: to } },
+        where: { createdAt: strictDateFilter },
         _count: { _all: true }
       })
       return NextResponse.json({
-        type: 'leads', total: leads.length,
+        type: 'leads', 
+        from: from.toISOString(),
+        to: to.toISOString(),
+        total: leads.length,
         by_status: byStatus.map(s => ({ status: s.status, count: s._count._all })),
         records: leads
       })
     }
 
+    // HR Report (Active employees)
     if (type === 'hr') {
       const employees = await prisma.user.findMany({
+        where: { joiningDate: { lte: to } }, // Employees who joined before or during the end date
         select: {
           id: true, fullName: true, email: true,
           joiningDate: true, highestQualification: true,
@@ -76,22 +112,33 @@ export async function GET(req: NextRequest) {
         },
         orderBy: { fullName: 'asc' }
       })
-      return NextResponse.json({ type: 'hr', total: employees.length, records: employees })
+      return NextResponse.json({ 
+        type: 'hr', 
+        from: from.toISOString(),
+        to: to.toISOString(),
+        total: employees.length, 
+        records: employees 
+      })
     }
 
     // Default summary
     const [leads, policies, claims, loans, users] = await Promise.all([
-      prisma.lead.count({ where: { createdAt: { gte: from, lte: to } } }),
-      prisma.policy.count({ where: { createdAt: { gte: from, lte: to } } }),
-      prisma.claim.count({ where: { createdAt: { gte: from, lte: to } } }),
-      prisma.loan.count({ where: { createdAt: { gte: from, lte: to } } }),
-      prisma.user.count({ where: { isActive: true } })
+      prisma.lead.count({ where: { createdAt: strictDateFilter } }),
+      prisma.policy.count({ where: { createdAt: strictDateFilter } }),
+      prisma.claim.count({ where: { createdAt: strictDateFilter } }),
+      prisma.loan.count({ where: { createdAt: strictDateFilter } }),
+      prisma.user.count({ where: { isActive: true, joiningDate: { lte: to } } })
     ])
+
     return NextResponse.json({ 
       type: 'summary', 
       from: from.toISOString(), 
       to: to.toISOString(), 
-      leads, policies, claims, loans, active_users: users 
+      leads, 
+      policies, 
+      claims, 
+      loans, 
+      active_users: users 
     })
   } catch (err: any) {
     console.error('Reports API Error:', err)

@@ -10,8 +10,25 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const status = searchParams.get('status')
     
+    const fromParam = searchParams.get('startDate') || searchParams.get('from')
+    const toParam = searchParams.get('endDate') || searchParams.get('to')
+    
     const where: any = {}
     if (status && status !== 'all') where.status = status
+
+    if (fromParam || toParam) {
+      where.createdAt = {}
+      if (fromParam) {
+        const d = new Date(fromParam)
+        d.setHours(0, 0, 0, 0)
+        if (!isNaN(d.getTime())) where.createdAt.gte = d
+      }
+      if (toParam) {
+        const d = new Date(toParam)
+        d.setHours(23, 59, 59, 999)
+        if (!isNaN(d.getTime())) where.createdAt.lte = d
+      }
+    }
 
     const policies = await prisma.policy.findMany({
       where,

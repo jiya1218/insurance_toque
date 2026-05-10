@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { NextResponse as NR } from 'next/server'
 import prisma from '@/lib/prisma'
 import { validateAuth } from '@/lib/auth-guard'
 
@@ -11,32 +10,52 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const view = searchParams.get('view') || 'auto'
     
-    // Adjust 'today' for IST (+5:30)
+    // Date parsing logic for strict filtering
+    const parseDate = (dateStr: string | null, isEnd: boolean) => {
+      if (!dateStr) return null
+      let d = new Date(dateStr)
+      if (isNaN(d.getTime())) return null
+      
+      if (isEnd) d.setHours(23, 59, 59, 999)
+      else d.setHours(0, 0, 0, 0)
+      return d
+    }
+
+    const fromParam = searchParams.get('startDate') || searchParams.get('from')
+    const toParam = searchParams.get('endDate') || searchParams.get('to')
+
+    let from = parseDate(fromParam, false)
+    let to = parseDate(toParam, true)
+
+    // Adjust 'today' for IST (+5:30) if no dates provided
     const now = new Date()
     const today = new Date(now.getTime() + (5.5 * 60 * 60 * 1000))
     today.setUTCHours(0, 0, 0, 0)
-    // Shift back to get the UTC equivalent of IST midnight
     const istMidnightInUtc = new Date(today.getTime() - (5.5 * 60 * 60 * 1000))
-    
+
+    // Determine effective filter
+    // If user provided dates, we use them strictly. Otherwise we show everything but highlight "Today".
+    const dateFilter = (from && to) ? { gte: from, lte: to } : undefined
+    const todayFilter = { gte: istMidnightInUtc }
+
     const userId = context!.userId
     const role = context!.role
     const perms = context!.permissions
 
-    // Determine effective view based on role/permissions
     const effectiveView = view === 'auto'
       ? perms.includes('dashboard.view_admin') ? 'admin'
         : perms.includes('dashboard.view_manager') ? 'manager'
         : 'agent'
       : view
 
-    // ── Agent view: personal KPIs ─────────────────────────────────────
+    // ── Agent view ─────────────────────────────────────
     if (effectiveView === 'agent') {
       const [myLeads, myLeadsToday, myFollowupsPending, myCallsToday, myQuotations] = await Promise.all([
-        prisma.lead.count({ where: { assignedTo: userId } }),
-        prisma.lead.count({ where: { assignedTo: userId, createdAt: { gte: istMidnightInUtc } } }),
+        prisma.lead.count({ where: { assignedTo: userId, createdAt: dateFilter } }),
+        prisma.lead.count({ where: { assignedTo: userId, createdAt: todayFilter } }),
         prisma.followUp.count({ where: { assignedTo: userId, status: 'pending' } }),
-        prisma.call.count({ where: { userId, createdAt: { gte: istMidnightInUtc } } }),
-        prisma.quotation.count({ where: { createdBy: userId } })
+        prisma.call.count({ where: { userId, createdAt: dateFilter || todayFilter } }),
+        prisma.quotation.count({ where: { createdBy: userId, createdAt: dateFilter } })
       ])
       return NextResponse.json({
         view: 'agent',
@@ -48,26 +67,26 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    // ── Manager view: team pipeline ───────────────────────────────────
+    // ── Manager view ───────────────────────────────────
     if (effectiveView === 'manager') {
       const [
         totalLeads, activeLeads, wonLeads, lostLeads,
         pendingFollowups, overdueFollowups,
         totalQuotations, sentQuotations
       ] = await Promise.all([
-        prisma.lead.count(),
-        prisma.lead.count({ where: { status: { in: ['New', 'Contacted', 'Qualified', 'Proposal', 'Negotiation'] } } }),
-        prisma.lead.count({ where: { status: 'Won' } }),
-        prisma.lead.count({ where: { status: 'Lost' } }),
-        prisma.followUp.count({ where: { status: 'pending' } }),
-        prisma.followUp.count({ where: { isOverdue: true } }),
-        prisma.quotation.count(),
-        prisma.quotation.count({ where: { status: 'Sent' } })
+        prisma.lead.count({ where: { createdAt: dateFilter } }),
+        prisma.lead.count({ where: { status: { in: ['New', 'Contacted', 'Qualified', 'Proposal', 'Negotiation'] }, createdAt: dateFilter } }),
+        prisma.lead.count({ where: { status: 'Won', createdAt: dateFilter } }),
+        prisma.lead.count({ where: { status: 'Lost', createdAt: dateFilter } }),
+        prisma.followUp.count({ where: { status: 'pending', createdAt: dateFilter } }),
+        prisma.followUp.count({ where: { isOverdue: true, createdAt: dateFilter } }),
+        prisma.quotation.count({ where: { createdAt: dateFilter } }),
+        prisma.quotation.count({ where: { status: 'Sent', createdAt: dateFilter } })
       ])
 
-      // Lead pipeline by status
       const pipeline = await prisma.lead.groupBy({
         by: ['status'],
+        where: { createdAt: dateFilter },
         _count: { _all: true }
       })
 
@@ -85,45 +104,44 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    // ── Admin view: full global stats ─────────────────────────────────
+    // ── Admin view ─────────────────────────────────
     const [
       totalLeads, newLeadsToday, totalPolicies, activePolicies,
       totalQuotations, totalCalls, pendingFollowups, overdueFollowups,
       activeClaims, pendingRto, pendingFitness, activeLoans,
       totalCustomers, todayVisits, totalUsers
     ] = await Promise.all([
-      prisma.lead.count(),
-      prisma.lead.count({ where: { createdAt: { gte: istMidnightInUtc } } }),
-      prisma.policy.count(),
-      prisma.policy.count({ where: { status: 'Active' } }),
-      prisma.quotation.count(),
-      prisma.call.count(),
-      prisma.followUp.count({ where: { status: 'pending' } }),
-      prisma.followUp.count({ where: { isOverdue: true } }),
-      prisma.claim.count({ where: { status: { in: ['filed', 'under_review', 'approved'] } } }),
-      prisma.rTOWork.count({ where: { status: 'pending' } }),
-      prisma.fitnessWork.count({ where: { status: 'pending' } }),
-      prisma.loan.count({ where: { status: { in: ['applied', 'under_review', 'approved', 'disbursed'] } } }),
-      prisma.customer.count(),
-      prisma.visit.count({ where: { scheduledAt: { gte: istMidnightInUtc } } }),
+      prisma.lead.count({ where: { createdAt: dateFilter } }),
+      prisma.lead.count({ where: { createdAt: todayFilter } }),
+      prisma.policy.count({ where: { createdAt: dateFilter } }),
+      prisma.policy.count({ where: { status: 'Active', createdAt: dateFilter } }),
+      prisma.quotation.count({ where: { createdAt: dateFilter } }),
+      prisma.call.count({ where: { createdAt: dateFilter } }),
+      prisma.followUp.count({ where: { status: 'pending', createdAt: dateFilter } }),
+      prisma.followUp.count({ where: { isOverdue: true, createdAt: dateFilter } }),
+      prisma.claim.count({ where: { status: { in: ['filed', 'under_review', 'approved'] }, createdAt: dateFilter } }),
+      prisma.rTOWork.count({ where: { status: 'pending', createdAt: dateFilter } }),
+      prisma.fitnessWork.count({ where: { status: 'pending', createdAt: dateFilter } }),
+      prisma.loan.count({ where: { status: { in: ['applied', 'under_review', 'approved', 'disbursed'] }, createdAt: dateFilter } }),
+      prisma.customer.count({ where: { createdAt: dateFilter } }),
+      prisma.visit.count({ where: { scheduledAt: dateFilter || todayFilter } }),
       prisma.user.count({ where: { isActive: true } })
     ])
 
-    // Monthly revenue (last 6 months)
+    // Monthly revenue (respect date filter if provided)
     const sixMonthsAgo = new Date(); sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
     const revenueData = await prisma.transaction.groupBy({
       by: ['date'],
-      where: { type: 'income', date: { gte: sixMonthsAgo } },
+      where: { type: 'income', date: dateFilter || { gte: sixMonthsAgo } },
       _sum: { amount: true }
     })
 
-    // Top agents by lead count
     const topAgents = await prisma.lead.groupBy({
       by: ['assignedTo'],
+      where: { assignedTo: { not: null }, createdAt: dateFilter },
       _count: { _all: true },
       orderBy: { _count: { assignedTo: 'desc' } },
-      take: 5,
-      where: { assignedTo: { not: null } }
+      take: 5
     })
 
     return NextResponse.json({

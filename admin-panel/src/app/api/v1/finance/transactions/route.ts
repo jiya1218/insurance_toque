@@ -11,9 +11,29 @@ export async function GET(req: NextRequest) {
     const type = searchParams.get('type')
     const category = searchParams.get('category')
     
+    // Date parsing logic for strict filtering
+    const parseDate = (dateStr: string | null, isEnd: boolean) => {
+      if (!dateStr) return null
+      let d = new Date(dateStr)
+      if (isNaN(d.getTime())) return null
+      if (isEnd) d.setHours(23, 59, 59, 999)
+      else d.setHours(0, 0, 0, 0)
+      return d
+    }
+
+    const startDate = searchParams.get('startDate') || searchParams.get('from')
+    const endDate = searchParams.get('endDate') || searchParams.get('to')
+    const from = parseDate(startDate, false)
+    const to = parseDate(endDate, true)
+
     const where: any = {}
     if (type && type !== 'all') where.type = type
     if (category) where.category = category
+    if (from || to) {
+      where.date = {}
+      if (from) where.date.gte = from
+      if (to) where.date.lte = to
+    }
 
     const [transactions, summary] = await Promise.all([
       prisma.transaction.findMany({

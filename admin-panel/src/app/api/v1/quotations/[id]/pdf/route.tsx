@@ -28,8 +28,10 @@ export async function GET(
     
     // Using toBlob() + arrayBuffer() is the most robust way to handle PDF data in Next.js 15
     // as it avoids conflicts between Node.js Streams and Web Streams during the build.
-    const blob = await pdf(<QuotationPDF data={quotation} />).toBlob()
-    const pdfArrayBuffer = await blob.arrayBuffer()
+    // We use 'as any' casting to prevent strict build-time type errors in Vercel's environment.
+    const pdfInstance = pdf(<QuotationPDF data={quotation} />)
+    const blob = await (pdfInstance.toBlob() as any)
+    const pdfArrayBuffer = await (blob.arrayBuffer() as any)
 
     // 3. Return PDF
     return new NextResponse(pdfArrayBuffer, {

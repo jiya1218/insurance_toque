@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import AdminLayout from '@/components/layout/AdminLayout'
 import { fetchApi } from '@/lib/api'
-import { Search, Filter, Plus, MoreVertical, ExternalLink, Download, Upload, CheckCircle, AlertCircle, Users } from 'lucide-react'
+import { Search, Filter, Plus, MoreVertical, ExternalLink, Download, Upload, CheckCircle, AlertCircle, Users, Calendar, RefreshCw } from 'lucide-react'
 
 export default function LeadsPage() {
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
@@ -13,20 +13,28 @@ export default function LeadsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState(initialSearch)
   const [importing, setImporting] = useState(false)
-  const [importResult, setImportResult] = useState<any>(null)
   const [showAddModal, setShowAddModal] = useState(false)
   const [newLead, setNewLead] = useState({ clientName: '', clientPhone: '', vehicleNo: '', clientEmail: '' })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Date Range State
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [startDate, endDate])
 
   const fetchData = async () => {
     setIsLoading(true)
     try {
+      const params = new URLSearchParams()
+      if (startDate) params.append('startDate', startDate)
+      if (endDate) params.append('endDate', endDate)
+      params.append('limit', '100')
+
       const [leadsData, statsData] = await Promise.all([
-        fetchApi('/api/v1/leads?limit=100'),
+        fetchApi(`/api/v1/leads?${params}`),
         fetchApi('/api/v1/leads/stats')
       ])
       
@@ -44,7 +52,6 @@ export default function LeadsPage() {
     if (!file) return
 
     setImporting(true)
-    setImportResult(null)
     const formData = new FormData()
     formData.append('file', file)
 
@@ -53,12 +60,9 @@ export default function LeadsPage() {
         method: 'POST',
         body: formData,
       })
-      
-      setImportResult(result.stats)
       alert(`Import Summary:\n- Total Rows: ${result.stats.total}\n- Imported: ${result.stats.assignedCount}\n- Errors: ${result.stats.errors}\n- Duplicates: ${result.stats.duplicates}`)
       fetchData()
     } catch (err: any) {
-      // If it's a fetchApi error, it already has the message
       alert(err.message || 'Import failed')
     } finally {
       setImporting(false)
@@ -96,18 +100,9 @@ export default function LeadsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Lead Management</h1>
           <p className="text-sm text-gray-500 mt-1">Track monthly renewals and employee performance.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <input 
-            type="file" 
-            id="csv-import" 
-            className="hidden" 
-            accept=".csv,.xlsx" 
-            onChange={handleImport} 
-          />
-          <label 
-            htmlFor="csv-import" 
-            className="cursor-pointer px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-all flex items-center gap-2"
-          >
+        <div className="flex flex-wrap items-center gap-3">
+          <input type="file" id="csv-import" className="hidden" accept=".csv,.xlsx" onChange={handleImport} />
+          <label htmlFor="csv-import" className="cursor-pointer px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-all flex items-center gap-2">
             <Upload size={16} />
             {importing ? 'Importing...' : 'Import Leads'}
           </label>
@@ -121,72 +116,6 @@ export default function LeadsPage() {
         </div>
       </div>
 
-      {/* Add Lead Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl">
-            <h2 className="text-xl font-bold mb-6">Add New Lead</h2>
-            <form onSubmit={handleAddLead} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Owner Name *</label>
-                <input 
-                  required
-                  type="text" 
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm"
-                  value={newLead.clientName}
-                  onChange={e => setNewLead({...newLead, clientName: e.target.value})}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Phone Number *</label>
-                <input 
-                  required
-                  type="text" 
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm"
-                  value={newLead.clientPhone}
-                  onChange={e => setNewLead({...newLead, clientPhone: e.target.value})}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Vehicle Number *</label>
-                <input 
-                  required
-                  type="text" 
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm"
-                  value={newLead.vehicleNo}
-                  onChange={e => setNewLead({...newLead, vehicleNo: e.target.value})}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email (Optional)</label>
-                <input 
-                  type="email" 
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm"
-                  value={newLead.clientEmail}
-                  onChange={e => setNewLead({...newLead, clientEmail: e.target.value})}
-                />
-              </div>
-              <div className="flex gap-3 mt-8">
-                <button 
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl text-sm font-bold"
-                >
-                  Cancel
-                </button>
-                <button 
-                  disabled={isSubmitting}
-                  type="submit"
-                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-200"
-                >
-                  {isSubmitting ? 'Saving...' : 'Save Lead'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
         <StatCard title="Total Leads" value={stats?.total || 0} icon={<Users className="text-blue-600" />} color="bg-blue-50" />
@@ -196,7 +125,7 @@ export default function LeadsPage() {
       </div>
 
       {/* Filters & Search */}
-      <div className="flex flex-col md:flex-row md:items-center gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm mt-6">
+      <div className="flex flex-col lg:flex-row lg:items-center gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm mt-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input 
@@ -207,10 +136,29 @@ export default function LeadsPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium">
-          <Filter size={18} />
-          Filter
-        </button>
+
+        {/* Date Range Picker */}
+        <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5">
+          <Calendar size={16} className="text-gray-400" />
+          <input 
+            type="date" 
+            value={startDate} 
+            onChange={e => setStartDate(e.target.value)}
+            className="text-xs font-semibold outline-none bg-transparent w-28"
+          />
+          <span className="text-gray-300">—</span>
+          <input 
+            type="date" 
+            value={endDate} 
+            onChange={e => setEndDate(e.target.value)}
+            className="text-xs font-semibold outline-none bg-transparent w-28"
+          />
+          {(startDate || endDate) && (
+            <button onClick={() => {setStartDate(''); setEndDate('')}} className="text-gray-400 hover:text-red-500 ml-1">
+              <RefreshCw size={14} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Table */}
@@ -230,7 +178,7 @@ export default function LeadsPage() {
               {isLoading ? (
                 <tr><td colSpan={5} className="px-6 py-10 text-center text-gray-500">Loading...</td></tr>
               ) : filteredLeads.length === 0 ? (
-                <tr><td colSpan={5} className="px-6 py-10 text-center text-gray-500">No leads found.</td></tr>
+                <tr><td colSpan={5} className="px-6 py-10 text-center text-gray-500">No leads found in this period.</td></tr>
               ) : filteredLeads.map((lead) => (
                 <tr key={lead.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-6 py-4">
@@ -264,6 +212,39 @@ export default function LeadsPage() {
           </table>
         </div>
       </div>
+
+      {/* Add Lead Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl">
+            <h2 className="text-xl font-bold mb-6">Add New Lead</h2>
+            <form onSubmit={handleAddLead} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Owner Name *</label>
+                <input required type="text" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm" value={newLead.clientName} onChange={e => setNewLead({...newLead, clientName: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Phone Number *</label>
+                <input required type="text" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm" value={newLead.clientPhone} onChange={e => setNewLead({...newLead, clientPhone: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Vehicle Number *</label>
+                <input required type="text" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm" value={newLead.vehicleNo} onChange={e => setNewLead({...newLead, vehicleNo: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email (Optional)</label>
+                <input type="email" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm" value={newLead.clientEmail} onChange={e => setNewLead({...newLead, clientEmail: e.target.value})} />
+              </div>
+              <div className="flex gap-3 mt-8">
+                <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl text-sm font-bold">Cancel</button>
+                <button disabled={isSubmitting} type="submit" className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-200">
+                  {isSubmitting ? 'Saving...' : 'Save Lead'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   )
 }

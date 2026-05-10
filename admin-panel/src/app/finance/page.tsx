@@ -18,14 +18,21 @@ export default function FinancePage() {
     reference_number: ''
   })
 
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [startDate, endDate])
 
   const fetchData = async () => {
     setLoading(true)
     try {
-      const res = await fetchApi('/api/v1/finance/transactions')
+      const params = new URLSearchParams()
+      if (startDate) params.append('startDate', startDate)
+      if (endDate) params.append('endDate', endDate)
+      
+      const res = await fetchApi(`/api/v1/finance/transactions?${params.toString()}`)
       setData(res || { items: [], summary: {} })
     } catch (error) {
       console.error('Failed to fetch transactions:', error)
@@ -89,20 +96,40 @@ export default function FinancePage() {
       <div className="mt-8 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-50 flex items-center justify-between gap-4">
           <h3 className="font-bold text-gray-900 whitespace-nowrap">Recent Transactions</h3>
-          <div className="flex items-center gap-3 flex-1 max-w-md">
-            <div className="relative flex-1">
+          <div className="flex items-center gap-3 flex-1 justify-end">
+            <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-xl border border-gray-100">
+              <input 
+                type="date" 
+                className="bg-transparent border-none text-xs font-bold outline-none px-2"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+              <span className="text-gray-300 text-xs">to</span>
+              <input 
+                type="date" 
+                className="bg-transparent border-none text-xs font-bold outline-none px-2"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+              {(startDate || endDate) && (
+                <button 
+                  onClick={() => { setStartDate(''); setEndDate(''); }}
+                  className="p-1 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  <X size={14} className="text-gray-400" />
+                </button>
+              )}
+            </div>
+            <div className="relative w-full max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input 
                 type="text" 
                 placeholder="Search transactions..." 
-                className="pl-10 pr-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none w-full"
+                className="pl-10 pr-4 py-2 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none w-full"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <button className="p-2.5 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-100 transition-colors">
-              <Filter size={18} />
-            </button>
           </div>
         </div>
         <div className="overflow-x-auto">

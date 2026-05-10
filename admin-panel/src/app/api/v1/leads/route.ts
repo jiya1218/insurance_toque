@@ -13,8 +13,25 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
 
+    const fromParam = searchParams.get('startDate') || searchParams.get('from')
+    const toParam = searchParams.get('endDate') || searchParams.get('to')
+    
     const where: any = {}
     
+    if (fromParam || toParam) {
+      where.createdAt = {}
+      if (fromParam) {
+        const d = new Date(fromParam)
+        d.setHours(0, 0, 0, 0)
+        if (!isNaN(d.getTime())) where.createdAt.gte = d
+      }
+      if (toParam) {
+        const d = new Date(toParam)
+        d.setHours(23, 59, 59, 999)
+        if (!isNaN(d.getTime())) where.createdAt.lte = d
+      }
+    }
+
     // RBAC: If not Admin/Super Admin, only see assigned leads
     if (context && !['Super Admin', 'Admin'].includes(context.role)) {
       where.assignedTo = context.userId
@@ -24,11 +41,17 @@ export async function GET(req: NextRequest) {
       where.status = status
     }
     if (search) {
-      where.OR = [
+      const searchFilter = [
         { clientName: { contains: search, mode: 'insensitive' } },
         { clientPhone: { contains: search, mode: 'insensitive' } },
         { vehicleNo: { contains: search, mode: 'insensitive' } }
       ]
+      if (where.OR) {
+        where.AND = [{ OR: where.OR }, { OR: searchFilter }]
+        delete where.OR
+      } else {
+        where.OR = searchFilter
+      }
     }
 
     const [leads, total] = await Promise.all([
