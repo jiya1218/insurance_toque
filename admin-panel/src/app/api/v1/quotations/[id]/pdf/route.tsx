@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { renderToStream } from '@react-pdf/renderer'
 import { QuotationPDF } from '@/components/pdf/QuotationPDF'
 import React from 'react'
 
@@ -24,12 +23,15 @@ export async function GET(
       return NextResponse.json({ error: 'Quotation not found' }, { status: 404 })
     }
 
-    // 2. Generate PDF
+    // 2. Generate PDF using dynamic import to avoid SSR issues with canvas/fonts
     const { pdf } = await import('@react-pdf/renderer')
     const buffer = await pdf(<QuotationPDF data={quotation} />).toBuffer()
     
     // 3. Return PDF
-    return new NextResponse(buffer, {
+    // Convert Node Buffer to Uint8Array for compatibility with NextResponse in Next.js 15/Vercel
+    const pdfBody = new Uint8Array(buffer)
+
+    return new NextResponse(pdfBody, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="quotation_${id.slice(0, 8)}.pdf"`
