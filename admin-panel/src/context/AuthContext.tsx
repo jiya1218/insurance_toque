@@ -47,27 +47,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await fetch('/api/v1/auth/me', {
         headers: { 'Authorization': `Bearer ${accessToken}` }
       })
-      const data = await response.json()
+      
       if (response.ok) {
+        const data = await response.json()
         setUser({
           ...data,
           permissions: data.role?.permissions?.map((p: any) => p.name) || []
         })
+      } else {
+        // FALLBACK FOR MOBILE: If API fails, use basic session info
+        // This prevents the login loop on mobile devices
+        setUser({
+          id: session.user.id,
+          email: session.user.email,
+          fullName: session.user.user_metadata?.full_name || 'Admin User',
+          permissions: [] // Basic access
+        })
       }
     } catch (error) {
-      console.error('Failed to fetch profile:', error)
+      console.error('Failed to fetch profile, using fallback:', error)
+      setUser({
+        id: session.user.id,
+        email: session.user.email,
+        fullName: session.user.user_metadata?.full_name || 'Admin User',
+        permissions: []
+      })
     } finally {
       setIsLoading(false)
     }
   }
 
   useEffect(() => {
-    // Get the current session immediately
     supabase.auth.getSession().then(({ data: { session } }) => {
       fetchProfile(session)
     })
 
-    // Listen for auth changes (login / logout / token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       fetchProfile(session)
     })

@@ -10,30 +10,22 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const type = searchParams.get('type') || 'summary'
     
-    // Robust date parsing for reports
+    // Robust IST-aware date parsing (GMT+5:30)
     const parseDate = (dateStr: string | null, isEnd: boolean) => {
       if (!dateStr) return null
       
-      // Handle both YYYY-MM-DD and potential other common formats
-      let d = new Date(dateStr)
+      const [year, month, day] = dateStr.split('-').map(Number)
+      if (!year || !month || !day) return null
       
-      if (isNaN(d.getTime())) {
-        // Backup: Try manual parse if browser Date fails
-        const parts = dateStr.split(/[-/]/)
-        if (parts.length === 3) {
-          if (parts[0].length === 4) { // YYYY-MM-DD
-            d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
-          } else { // DD-MM-YYYY
-            d = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]))
-          }
-        }
+      if (!isEnd) {
+        const d = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))
+        d.setMinutes(d.getMinutes() - 330) // -5h 30m
+        return d
+      } else {
+        const d = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999))
+        d.setMinutes(d.getMinutes() - 330) // -5h 30m
+        return d
       }
-      
-      if (isNaN(d.getTime())) return null
-      
-      if (isEnd) d.setHours(23, 59, 59, 999)
-      else d.setHours(0, 0, 0, 0)
-      return d
     }
 
     // Get dates from 'from'/'to' or 'startDate'/'endDate'

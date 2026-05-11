@@ -10,15 +10,24 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const view = searchParams.get('view') || 'auto'
     
-    // Date parsing logic for strict filtering
+    // Robust IST-aware date parsing (GMT+5:30)
     const parseDate = (dateStr: string | null, isEnd: boolean) => {
       if (!dateStr) return null
-      let d = new Date(dateStr)
-      if (isNaN(d.getTime())) return null
       
-      if (isEnd) d.setHours(23, 59, 59, 999)
-      else d.setHours(0, 0, 0, 0)
-      return d
+      const [year, month, day] = dateStr.split('-').map(Number)
+      if (!year || !month || !day) return null
+      
+      // IST start of day (00:00) is UTC previous day 18:30
+      // IST end of day (23:59:59) is UTC same day 18:29:59
+      if (!isEnd) {
+        const d = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))
+        d.setMinutes(d.getMinutes() - 330) // -5h 30m
+        return d
+      } else {
+        const d = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999))
+        d.setMinutes(d.getMinutes() - 330) // -5h 30m
+        return d
+      }
     }
 
     const fromParam = searchParams.get('startDate') || searchParams.get('from')
