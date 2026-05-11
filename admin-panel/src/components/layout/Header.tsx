@@ -8,15 +8,17 @@ export default function Header() {
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut()
-      router.push('/login') // Redirect to login page after logout
+      router.push('/login')
     } catch (error) {
       console.error('Error logging out:', error)
     }
   }
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 z-20">
+    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-8 z-20">
       <div className="flex items-center gap-4 flex-1">
+        {/* Spacer for hamburger on mobile */}
+        <div className="w-10 md:hidden"></div>
         <div className="relative w-full max-w-md hidden md:block">
           <input 
             type="text" 
@@ -26,13 +28,13 @@ export default function Header() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4">
         <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors relative">
           🔔
           <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
         </button>
-        <div className="h-8 w-px bg-gray-200 mx-2"></div>
-        <div className="flex items-center gap-4">
+        <div className="h-8 w-px bg-gray-200 mx-1 hidden md:block"></div>
+        <div className="flex items-center gap-2 md:gap-4">
           <button className="flex items-center gap-2 p-1 pr-3 hover:bg-gray-100 rounded-full transition-colors">
             <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white">
               👤
@@ -41,7 +43,7 @@ export default function Header() {
           </button>
           <button 
             onClick={handleLogout}
-            className="text-sm font-semibold text-red-600 hover:text-red-700 px-3 py-1 hover:bg-red-50 rounded-lg transition-all"
+            className="text-sm font-semibold text-red-600 hover:text-red-700 px-2 md:px-3 py-1 hover:bg-red-50 rounded-lg transition-all"
           >
             Logout
           </button>
