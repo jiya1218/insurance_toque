@@ -30,7 +30,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await req.json()
-    const { roleId, isActive, extraPermissionIds } = body
+    const { roleId, managerId, isActive, extraPermissionIds } = body
 
     const user = await prisma.user.update({
       where: { id },
@@ -39,7 +39,9 @@ export async function PATCH(
         ...(body.email !== undefined && { email: body.email }),
         ...(body.personalMobile !== undefined && { personalMobile: body.personalMobile }),
         ...(roleId !== undefined && { roleId: roleId || null }),
+        ...(managerId !== undefined && { managerId: managerId || null }),
         ...(isActive !== undefined && { isActive }),
+        ...(body.restore === true && { deletedAt: null, isActive: true }),
         ...(extraPermissionIds !== undefined && {
           permissions: {
             set: extraPermissionIds.map((id: string) => ({ id }))
@@ -48,9 +50,11 @@ export async function PATCH(
       },
       include: {
         role: { select: { id: true, name: true } },
+        manager: { select: { id: true, fullName: true } },
         permissions: { select: { id: true, name: true } }
       }
     })
+
 
     return NextResponse.json(user)
   } catch (error) {
@@ -65,8 +69,23 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await prisma.user.delete({ where: { id } })
-    return NextResponse.json({ success: true })
+    const { searchParams } = new URL(req.url)
+    const permanent = searchParams.get('permanent') === 'true'
+
+    if (permanent) {
+      // 1. Delete from Supabase Auth first
+      await supabaseAdmin.auth.admin.deleteUser(id)
+      // 2. Delete from Prisma DB
+      await prisma.user.delete({ where: { id } })
+    } else {
+      // Soft delete: Just set deletedAt
+      await prisma.user.update({
+        where: { id },
+        data: { deletedAt: new Date(), isActive: false }
+      })
+    }
+
+    return NextResponse.json({ success: true, permanent })
   } catch (error) {
     console.error('User DELETE Error:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

@@ -6,35 +6,37 @@ import { useApi } from '@/hooks/useApi'
 import {
   UserPlus, Shield, Mail, Edit3, Trash2,
   CheckCircle2, Circle, XCircle, X, Search, RefreshCw,
-  User, BookOpen, AlertCircle
+  User, BookOpen, AlertCircle, Clock, Check
 } from 'lucide-react'
 
 export default function UsersPage() {
-  const { token, isLoading: authLoading } = useAuth()
+  const { user: currentUser, token, isLoading: authLoading } = useAuth()
   const apiFetch = useApi()
   const [users, setUsers] = useState<any[]>([])
   const [roles, setRoles] = useState<any[]>([])
   const [allPermissions, setAllPermissions] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [filter, setFilter] = useState<'all' | 'pending' | 'active'>('all')
 
-  // Create modal
+  const isAdmin = currentUser?.role?.name?.toUpperCase() === 'ADMIN'
+  const isManager = currentUser?.role?.name?.toUpperCase() === 'MANAGER'
+
+  // Modals
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [editUser, setEditUser] = useState<any>(null)
+  
+  // Forms
   const [creating, setCreating] = useState(false)
   const [createForm, setCreateForm] = useState({
-    fullName: '', email: '', password: '', roleId: '',
+    fullName: '', email: '', password: '', roleId: '', managerId: '',
     highestQualification: '', dateOfBirth: '', joiningDate: '',
     personalMobile: '', homeMobile: ''
   })
   const [createError, setCreateError] = useState('')
 
-  // Edit modal
-  const [editUser, setEditUser] = useState<any>(null)
-  const [editForm, setEditForm] = useState({ roleId: '', isActive: true, extraPermissionIds: [] as string[] })
+  const [editForm, setEditForm] = useState({ roleId: '', managerId: '', isActive: true, extraPermissionIds: [] as string[] })
   const [saving, setSaving] = useState(false)
-
-  // Delete
-  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const fetchData = useCallback(async () => {
     setIsLoading(true)
@@ -57,13 +59,9 @@ export default function UsersPage() {
     }
   }, [apiFetch])
 
-  // Wait for auth before fetching
   useEffect(() => {
-    if (!authLoading) {
-      if (token) fetchData()
-      else setIsLoading(false)
-    }
-  }, [authLoading, token]) // eslint-disable-line
+    if (!authLoading && token) fetchData()
+  }, [authLoading, token, fetchData])
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -75,11 +73,10 @@ export default function UsersPage() {
         body: JSON.stringify(createForm)
       })
       const data = await res.json()
-      if (!res.ok) {
-        setCreateError(data.error || 'Failed to create user')
-      } else {
+      if (!res.ok) setCreateError(data.error || 'Failed to create user')
+      else {
         setShowCreateModal(false)
-        setCreateForm({ fullName: '', email: '', password: '', roleId: '', highestQualification: '', dateOfBirth: '', joiningDate: '', personalMobile: '', homeMobile: '' })
+        setCreateForm({ fullName: '', email: '', password: '', roleId: '', managerId: '', highestQualification: '', dateOfBirth: '', joiningDate: '', personalMobile: '', homeMobile: '' })
         fetchData()
       }
     } catch {
@@ -89,13 +86,16 @@ export default function UsersPage() {
     }
   }
 
-  const openEdit = (user: any) => {
-    setEditUser(user)
-    setEditForm({
-      roleId: user.role?.id || '',
-      isActive: user.isActive,
-      extraPermissionIds: user.permissions?.map((p: any) => p.id) || []
-    })
+  const handleApprove = async (id: string) => {
+    try {
+      const res = await apiFetch(`/api/v1/users/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isActive: true })
+      })
+      if (res.ok) fetchData()
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   const handleEditSave = async () => {
@@ -104,11 +104,7 @@ export default function UsersPage() {
     try {
       const res = await apiFetch(`/api/v1/users/${editUser.id}`, {
         method: 'PATCH',
-        body: JSON.stringify({
-          roleId: editForm.roleId || null,
-          isActive: editForm.isActive,
-          extraPermissionIds: editForm.extraPermissionIds
-        })
+        body: JSON.stringify(editForm)
       })
       if (res.ok) {
         setEditUser(null)
@@ -121,41 +117,51 @@ export default function UsersPage() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this user? This cannot be undone.')) return
-    setDeletingId(id)
-    try {
-      await apiFetch(`/api/v1/users/${id}`, { method: 'DELETE' })
-      fetchData()
-    } finally {
-      setDeletingId(null)
-    }
+  const openEdit = (user: any) => {
+    setEditUser(user)
+    setEditForm({
+      roleId: user.role?.id || '',
+      managerId: user.managerId || '',
+      isActive: user.isActive,
+      extraPermissionIds: user.permissions?.map((p: any) => p.id) || []
+    })
   }
 
-  const filtered = users.filter(u =>
-    u.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.role?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filtered = users.filter(u => {
+    const matchesSearch = u.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          u.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    if (filter === 'pending') return matchesSearch && !u.isActive
+    if (filter === 'active') return matchesSearch && u.isActive
+    return matchesSearch
+  })
 
   return (
     <AdminLayout>
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Manage Users</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{users.length} total employees</p>
+          <div className="flex items-center gap-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
+              <p className="text-sm text-gray-500 mt-1">{users.length} registered employees</p>
+            </div>
+            
+            <div className="flex bg-gray-100 p-1 rounded-xl">
+               <button onClick={() => setFilter('all')} className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${filter === 'all' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}>All</button>
+               <button onClick={() => setFilter('active')} className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${filter === 'active' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-500'}`}>Active</button>
+               <button onClick={() => setFilter('pending')} className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${filter === 'pending' ? 'bg-white text-amber-600 shadow-sm' : 'text-gray-500'}`}>Pending Approval</button>
+            </div>
           </div>
+
           <div className="flex items-center gap-3">
             <button onClick={fetchData} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all">
-              <RefreshCw size={18} />
+              <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
             </button>
             <button
               onClick={() => setShowCreateModal(true)}
               className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl shadow-md hover:bg-blue-700 transition-all font-semibold text-sm"
             >
-              <UserPlus size={18} /> Add User
+              <UserPlus size={18} /> Add New
             </button>
           </div>
         </div>
@@ -165,7 +171,7 @@ export default function UsersPage() {
           <Search size={18} className="text-gray-400 shrink-0" />
           <input
             type="text"
-            placeholder="Search by name, email, or role..."
+            placeholder="Search employees..."
             className="flex-1 bg-transparent border-none outline-none text-sm"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
@@ -173,16 +179,15 @@ export default function UsersPage() {
         </div>
 
         {/* Users Table */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[400px]">
           {isLoading ? (
             <div className="flex items-center justify-center py-20">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-              <User size={40} className="mb-3 text-gray-300" />
-              <p className="font-semibold">No users found</p>
-              <p className="text-sm mt-1">Add your first employee to get started</p>
+              <User size={40} className="mb-3 text-gray-200" />
+              <p className="font-semibold">No employees found</p>
             </div>
           ) : (
             <table className="w-full">
@@ -191,7 +196,6 @@ export default function UsersPage() {
                   <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-widest px-6 py-4">Employee</th>
                   <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-widest px-4 py-4">Role</th>
                   <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-widest px-4 py-4">Status</th>
-                  <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-widest px-4 py-4">Joined</th>
                   <th className="text-right text-xs font-bold text-gray-400 uppercase tracking-widest px-6 py-4">Actions</th>
                 </tr>
               </thead>
@@ -205,53 +209,35 @@ export default function UsersPage() {
                         </div>
                         <div>
                           <p className="text-sm font-bold text-gray-900">{user.fullName}</p>
-                          <p className="text-xs text-gray-400 flex items-center gap-1">
-                            <Mail size={10} /> {user.email}
-                          </p>
+                          <p className="text-xs text-gray-400">{user.email}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-4">
-                      {user.role ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold">
-                          <Shield size={11} /> {user.role.name}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-gray-400 italic">No role</span>
-                      )}
+                      <span className="px-2.5 py-1 bg-gray-100 text-gray-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-gray-200">
+                        {user.role?.name || 'Unassigned'}
+                      </span>
                     </td>
                     <td className="px-4 py-4">
                       {user.isActive ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 rounded-lg text-xs font-bold">
-                          <CheckCircle2 size={11} /> Active
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-700 rounded-lg text-xs font-bold border border-green-200">
+                          <CheckCircle2 size={12} /> Active
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 text-red-600 rounded-lg text-xs font-bold">
-                          <XCircle size={11} /> Inactive
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-600 rounded-lg text-xs font-bold border border-amber-200">
+                          <Clock size={12} /> Pending Approval
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-4 text-xs text-gray-400">
-                      {user.joiningDate ? new Date(user.joiningDate).toLocaleDateString('en-IN') : '—'}
-                    </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => openEdit(user)}
-                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                          title="Edit user"
-                        >
-                          <Edit3 size={15} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(user.id)}
-                          disabled={deletingId === user.id}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
-                          title="Delete user"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
+                       <div className="flex items-center justify-end gap-2">
+                         {!user.isActive && isAdmin && (
+                           <button onClick={() => handleApprove(user.id)} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 shadow-md shadow-green-100">
+                              <Check size={14} /> Approve
+                           </button>
+                         )}
+                         <button onClick={() => openEdit(user)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"><Edit3 size={16}/></button>
+                       </div>
                     </td>
                   </tr>
                 ))}
@@ -263,229 +249,93 @@ export default function UsersPage() {
 
       {/* ── Create User Modal ── */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl p-8 my-10">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Add New Employee</h2>
-                <p className="text-sm text-gray-500 mt-1">Complete the onboarding details below.</p>
-              </div>
-              <button onClick={() => { setShowCreateModal(false); setCreateError('') }} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all">
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateUser} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Account Details */}
-                <div className="space-y-4">
-                  <h5 className="text-xs font-bold text-blue-600 uppercase flex items-center gap-2"><User size={12} /> Account Access</h5>
-                  {[
-                    { label: 'Full Name *', key: 'fullName', type: 'text', placeholder: 'e.g. Karan Mehra', required: true },
-                    { label: 'Email Address *', key: 'email', type: 'email', placeholder: 'karan@company.in', required: true },
-                    { label: 'Password *', key: 'password', type: 'password', placeholder: 'Min 8 characters', required: true },
-                  ].map(f => (
-                    <div key={f.key}>
-                      <label className="block text-xs font-bold text-gray-700 mb-1.5">{f.label}</label>
-                      <input
-                        type={f.type} required={f.required} placeholder={f.placeholder}
-                        value={(createForm as any)[f.key]}
-                        onChange={e => setCreateForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  ))}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1.5">Assign Role</label>
-                    <select
-                      value={createForm.roleId}
-                      onChange={e => setCreateForm(f => ({ ...f, roleId: e.target.value }))}
-                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Select a role (optional)</option>
-                      {roles.map(role => (
-                        <option key={role.id} value={role.id}>{role.name}</option>
-                      ))}
-                    </select>
-                  </div>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl p-10 animate-in zoom-in duration-200">
+             <div className="flex items-center justify-between mb-8">
+                <div>
+                   <h2 className="text-2xl font-black text-gray-900 tracking-tight">Add New Employee</h2>
+                   {isManager && <p className="text-sm text-amber-600 font-medium mt-1 italic">Note: Accounts created by Managers require Admin Approval.</p>}
                 </div>
-
-                {/* Personal Details */}
-                <div className="space-y-4">
-                  <h5 className="text-xs font-bold text-blue-600 uppercase flex items-center gap-2"><BookOpen size={12} /> Onboarding Details</h5>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1.5">Highest Qualification</label>
-                    <input type="text" placeholder="e.g. MBA, B.Tech"
-                      value={createForm.highestQualification}
-                      onChange={e => setCreateForm(f => ({ ...f, highestQualification: e.target.value }))}
-                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { label: 'Date of Birth', key: 'dateOfBirth' },
-                      { label: 'Joining Date', key: 'joiningDate' },
-                    ].map(f => (
-                      <div key={f.key}>
-                        <label className="block text-xs font-bold text-gray-700 mb-1.5">{f.label}</label>
-                        <input type="date" value={(createForm as any)[f.key]}
-                          onChange={e => setCreateForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-                          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                        />
+                <button onClick={() => setShowCreateModal(false)} className="p-3 hover:bg-gray-100 rounded-2xl transition-all"><X size={24}/></button>
+             </div>
+             
+             <form onSubmit={handleCreateUser} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                   <div className="space-y-4">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block mb-2">Account Credentials</label>
+                      <input type="text" placeholder="Full Name" required value={createForm.fullName} onChange={e => setCreateForm({...createForm, fullName: e.target.value})} className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-100 outline-none transition-all" />
+                      <input type="email" placeholder="Work Email" required value={createForm.email} onChange={e => setCreateForm({...createForm, email: e.target.value})} className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-100 outline-none transition-all" />
+                      <input type="password" placeholder="Temporary Password" required value={createForm.password} onChange={e => setCreateForm({...createForm, password: e.target.value})} className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-blue-100 outline-none transition-all" />
+                   </div>
+                   <div className="space-y-4">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block mb-2">Role Assignment</label>
+                      <select 
+                        disabled={isManager}
+                        value={isManager ? (roles.find(r => r.name === 'EXECUTIVE')?.id || '') : createForm.roleId} 
+                        onChange={e => setCreateForm({...createForm, roleId: e.target.value})} 
+                        className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold outline-none"
+                      >
+                         {isManager ? (
+                           <option value="">EXECUTIVE</option>
+                         ) : (
+                           <>
+                             <option value="">Select Role</option>
+                             {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                           </>
+                         )}
+                      </select>
+                      
+                      {!isManager && (
+                        <select value={createForm.managerId} onChange={e => setCreateForm({...createForm, managerId: e.target.value})} className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold outline-none">
+                           <option value="">No Manager (Direct)</option>
+                           {users.filter(u => u.role?.name?.toUpperCase() === 'MANAGER').map(m => <option key={m.id} value={m.id}>{m.fullName}</option>)}
+                        </select>
+                      )}
+                      
+                      <div className="p-5 bg-blue-50/50 border border-blue-100 rounded-2xl">
+                         <p className="text-[11px] text-blue-700 leading-relaxed font-medium">
+                           {isManager 
+                             ? "As a Manager, you are adding an Executive to your team. They will be active once approved by the Super Admin."
+                             : "Admins can create active accounts and assign reporting managers immediately."
+                           }
+                         </p>
                       </div>
-                    ))}
-                  </div>
-                  {[
-                    { label: 'Personal Mobile', key: 'personalMobile', placeholder: '+91 00000 00000' },
-                    { label: 'Home / Emergency Mobile', key: 'homeMobile', placeholder: '+91 00000 00000' },
-                  ].map(f => (
-                    <div key={f.key}>
-                      <label className="block text-xs font-bold text-gray-700 mb-1.5">{f.label}</label>
-                      <input type="tel" placeholder={f.placeholder}
-                        value={(createForm as any)[f.key]}
-                        onChange={e => setCreateForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  ))}
+                   </div>
                 </div>
-              </div>
 
-              {createError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 font-medium flex items-center gap-2">
-                  <AlertCircle size={16} /> {createError}
+                {createError && <p className="p-4 bg-red-50 text-red-600 text-xs font-bold rounded-2xl border border-red-100 flex items-center gap-2"><AlertCircle size={14}/> {createError}</p>}
+                
+                <div className="flex gap-4 pt-4">
+                   <button type="button" onClick={() => setShowCreateModal(false)} className="flex-1 py-4 text-gray-400 font-black tracking-widest uppercase text-[10px] hover:bg-gray-50 rounded-2xl transition-all">Dismiss</button>
+                   <button type="submit" disabled={creating} className="flex-1 py-4 bg-gray-900 text-white font-black tracking-widest uppercase text-[10px] rounded-2xl shadow-2xl shadow-gray-200 hover:bg-black transition-all">
+                      {creating ? 'Processing...' : 'Complete Registration'}
+                   </button>
                 </div>
-              )}
-
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => { setShowCreateModal(false); setCreateError('') }}
-                  className="flex-1 px-4 py-3 border border-gray-200 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-50 transition-all">
-                  Cancel
-                </button>
-                <button type="submit" disabled={creating}
-                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all disabled:opacity-50 shadow-lg shadow-blue-200">
-                  {creating ? 'Creating...' : 'Register Employee'}
-                </button>
-              </div>
-            </form>
+             </form>
           </div>
         </div>
       )}
 
-      {/* ── Edit User Modal ── */}
+      {/* ── Edit Modal (Simplified for the workflow) ── */}
       {editUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl p-8 my-8">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Edit User</h2>
-                <p className="text-sm text-gray-500 mt-0.5">{editUser.fullName} · {editUser.email}</p>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+           <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg p-10">
+              <h2 className="text-xl font-black text-gray-900 mb-6">Modify Access</h2>
+              <div className="space-y-6">
+                 <div>
+                    <label className="text-[10px] font-black text-gray-400 uppercase mb-2 block">Account Status</label>
+                    <div className="flex gap-3">
+                       <button onClick={() => setEditForm({...editForm, isActive: true})} className={`flex-1 py-3 rounded-xl font-bold text-xs border transition-all ${editForm.isActive ? 'bg-green-50 border-green-200 text-green-700' : 'bg-gray-50 border-gray-100 text-gray-400'}`}>Active</button>
+                       <button onClick={() => setEditForm({...editForm, isActive: false})} className={`flex-1 py-3 rounded-xl font-bold text-xs border transition-all ${!editForm.isActive ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-gray-50 border-gray-100 text-gray-400'}`}>Pending/Inactive</button>
+                    </div>
+                 </div>
+                 
+                 <div className="flex gap-3">
+                    <button onClick={() => setEditUser(null)} className="flex-1 py-3 font-bold text-xs text-gray-400">Cancel</button>
+                    <button onClick={handleEditSave} disabled={saving} className="flex-1 py-4 bg-blue-600 text-white rounded-xl font-black text-[10px] tracking-widest uppercase">Apply Changes</button>
+                 </div>
               </div>
-              <button onClick={() => setEditUser(null)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all">
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="space-y-5">
-              {/* Role & Status row */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5">Assign Role</label>
-                  <select
-                    value={editForm.roleId}
-                    onChange={e => setEditForm(f => ({ ...f, roleId: e.target.value }))}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">No Role</option>
-                    {roles.map(role => (
-                      <option key={role.id} value={role.id}>{role.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5">Account Status</label>
-                  <div className="flex gap-2">
-                    {[true, false].map(val => (
-                      <button
-                        key={String(val)}
-                        onClick={() => setEditForm(f => ({ ...f, isActive: val }))}
-                        className={`flex-1 py-2.5 rounded-xl text-sm font-bold border transition-all ${
-                          editForm.isActive === val
-                            ? val ? 'bg-green-50 border-green-400 text-green-700' : 'bg-red-50 border-red-400 text-red-700'
-                            : 'bg-gray-50 border-gray-200 text-gray-600'
-                        }`}
-                      >
-                        {val ? '✓ Active' : '✗ Inactive'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Extra Permissions */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold text-gray-700">
-                    Extra Permissions
-                    <span className="ml-2 text-gray-400 font-normal">(in addition to role permissions)</span>
-                  </label>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setEditForm(f => ({ ...f, extraPermissionIds: allPermissions.map(p => p.id) }))}
-                      className="text-[10px] font-bold text-blue-600 px-2 py-1 bg-blue-50 hover:bg-blue-100 rounded-lg"
-                    >Select All</button>
-                    <button
-                      onClick={() => setEditForm(f => ({ ...f, extraPermissionIds: [] }))}
-                      className="text-[10px] font-bold text-gray-500 px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg"
-                    >Clear</button>
-                  </div>
-                </div>
-                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-3 max-h-64 overflow-y-auto space-y-1">
-                  {allPermissions.length === 0 ? (
-                    <p className="text-sm text-gray-400 text-center py-4">Loading permissions…</p>
-                  ) : allPermissions.map(p => {
-                    const on = editForm.extraPermissionIds.includes(p.id)
-                    return (
-                      <div
-                        key={p.id}
-                        onClick={() => setEditForm(f => ({
-                          ...f,
-                          extraPermissionIds: on
-                            ? f.extraPermissionIds.filter(id => id !== p.id)
-                            : [...f.extraPermissionIds, p.id]
-                        }))}
-                        className={`flex items-center gap-2.5 px-3 py-2 rounded-xl cursor-pointer select-none transition-all ${
-                          on ? 'bg-blue-50 border border-blue-200' : 'bg-white border border-transparent hover:bg-gray-100'
-                        }`}
-                      >
-                        {on
-                          ? <CheckCircle2 size={14} className="text-blue-600 shrink-0" />
-                          : <Circle size={14} className="text-gray-300 shrink-0" />
-                        }
-                        <span className={`text-sm font-medium truncate ${on ? 'text-blue-800' : 'text-gray-700'}`}>
-                          {p.name}
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
-                <p className="text-[10px] text-gray-400 mt-1.5">
-                  {editForm.extraPermissionIds.length} extra permissions selected
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button onClick={() => setEditUser(null)}
-                className="flex-1 px-4 py-3 border border-gray-200 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-50 transition-all">
-                Cancel
-              </button>
-              <button onClick={handleEditSave} disabled={saving}
-                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all disabled:opacity-50 shadow-lg shadow-blue-200">
-                {saving ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-          </div>
+           </div>
         </div>
       )}
     </AdminLayout>

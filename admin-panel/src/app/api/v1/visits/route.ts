@@ -11,13 +11,24 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url)
   const status = searchParams.get('status')
-  const isManager = context!.permissions.includes('dashboard.view_manager')
+  
+  const where: any = {}
+  
+  if (context?.role === 'EXECUTIVE') {
+    where.userId = context.userId
+  } else if (context?.role === 'MANAGER') {
+    const team = await prisma.user.findMany({
+      where: { managerId: context.userId },
+      select: { id: true }
+    })
+    const teamIds = team.map(t => t.id)
+    where.userId = { in: [context.userId, ...teamIds] }
+  }
+
+  if (status) where.status = status
 
   const visits = await prisma.visit.findMany({
-    where: {
-      ...(isManager ? {} : { userId: context!.userId }),
-      ...(status ? { status } : {})
-    },
+    where,
     orderBy: { scheduledAt: 'desc' },
     include: {
       customer: { select: { name: true, phone: true } },

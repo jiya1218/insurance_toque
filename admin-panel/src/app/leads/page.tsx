@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import AdminLayout from '@/components/layout/AdminLayout'
 import { fetchApi } from '@/lib/api'
-import { Search, Filter, Plus, MoreVertical, ExternalLink, Download, Upload, CheckCircle, AlertCircle, Users, Calendar, RefreshCw } from 'lucide-react'
+import { Search, Filter, Plus, MoreVertical, ExternalLink, Download, Upload, CheckCircle, AlertCircle, Users, Calendar, RefreshCw, Phone, MessageCircle } from 'lucide-react'
 
 export default function LeadsPage() {
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
@@ -182,9 +182,32 @@ export default function LeadsPage() {
               ) : filteredLeads.map((lead) => (
                 <tr key={lead.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-6 py-4">
-                    <div className="font-bold text-gray-900">{lead.clientName}</div>
-                    <div className="text-xs text-gray-500">{lead.vehicleNo} · {lead.clientPhone}</div>
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <div className="font-bold text-gray-900">{lead.clientName}</div>
+                        <div className="text-xs text-gray-500">{lead.vehicleNo}</div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <a 
+                          href={`tel:${lead.clientPhone}`}
+                          className="p-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
+                          title="Call now"
+                        >
+                          <Phone size={14} />
+                        </a>
+                        <a 
+                          href={`https://wa.me/91${lead.clientPhone}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors"
+                          title="WhatsApp message"
+                        >
+                          <MessageCircle size={14} />
+                        </a>
+                      </div>
+                    </div>
                   </td>
+
                   <td className="px-6 py-4">
                     <span className="px-2 py-1 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700 uppercase">
                       {lead.status}

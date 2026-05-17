@@ -3,20 +3,33 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
 export async function GET(req: NextRequest) {
-  const { error } = await validateAuth(req, 'claims.view')
-  if (error) return error
+    const { error, context } = await validateAuth(req, 'claims.view')
+    if (error) return error
 
-  try {
-    const { searchParams } = new URL(req.url)
-    const status = searchParams.get('status')
-    
-    const where: any = {}
-    if (status && status !== 'all') {
-      where.status = status
-    }
+    try {
+      const { searchParams } = new URL(req.url)
+      const status = searchParams.get('status')
+      
+      const where: any = {}
+      
+      // RBAC: Dynamic filtering based on role
+      if (context && context.role === 'EXECUTIVE') {
+        where.assignedTo = context.userId
+      } else if (context && context.role === 'MANAGER') {
+        const team = await prisma.user.findMany({
+          where: { managerId: context.userId },
+          select: { id: true }
+        })
+        const teamIds = team.map(t => t.id)
+        where.assignedTo = { in: [context.userId, ...teamIds] }
+      }
 
-    const claims = await prisma.claim.findMany({
-      where,
+      if (status && status !== 'all') {
+        where.status = status
+      }
+
+      const claims = await prisma.claim.findMany({
+        where,
       orderBy: { filedDate: 'desc' },
       include: {
         lead: { select: { clientName: true } },

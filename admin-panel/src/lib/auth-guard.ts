@@ -78,8 +78,13 @@ export async function validateAuth(
         permissions
       }
     }
-  } catch (error) {
-    console.error('RBAC Validation Error:', error)
-    return { error: NextResponse.json({ error: 'Internal Server Error during authorization' }, { status: 500 }) }
+  } catch (error: any) {
+    console.error('[auth-guard] CRITICAL ERROR:', error)
+    return { 
+      error: NextResponse.json({ 
+        error: 'Internal Server Error during authorization',
+        details: error?.message || 'Unknown error'
+      }, { status: 500 }) 
+    }
   }
 }

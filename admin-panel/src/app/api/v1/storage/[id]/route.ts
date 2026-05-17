@@ -23,7 +23,7 @@ export async function GET(
     const canAccess =
       doc.uploadedBy === context!.userId ||
       context!.permissions.includes('data.manage_documents') ||
-      context!.role === 'Super Admin' ||
+      context!.role === 'ADMIN' ||
       context!.role === 'Admin'
 
     if (!canAccess) {

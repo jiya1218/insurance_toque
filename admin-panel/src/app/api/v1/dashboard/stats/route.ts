@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma'
 import { validateAuth } from '@/lib/auth-guard'
 
 export async function GET(req: NextRequest) {
-  const { context, error } = await validateAuth(req, 'dashboard.view_agent')
+  const { context, error } = await validateAuth(req)
   if (error) return error
 
   try {
@@ -78,29 +78,37 @@ export async function GET(req: NextRequest) {
 
     // ── Manager view ───────────────────────────────────
     if (effectiveView === 'manager') {
+      // Get IDs of all users reporting to this manager
+      const team = await prisma.user.findMany({
+        where: { managerId: userId },
+        select: { id: true }
+      })
+      const teamIds = team.map(t => t.id)
+
       const [
         totalLeads, activeLeads, wonLeads, lostLeads,
         pendingFollowups, overdueFollowups,
         totalQuotations, sentQuotations
       ] = await Promise.all([
-        prisma.lead.count({ where: { createdAt: dateFilter } }),
-        prisma.lead.count({ where: { status: { in: ['New', 'Contacted', 'Qualified', 'Proposal', 'Negotiation'] }, createdAt: dateFilter } }),
-        prisma.lead.count({ where: { status: 'Won', createdAt: dateFilter } }),
-        prisma.lead.count({ where: { status: 'Lost', createdAt: dateFilter } }),
-        prisma.followUp.count({ where: { status: 'pending', createdAt: dateFilter } }),
-        prisma.followUp.count({ where: { isOverdue: true, createdAt: dateFilter } }),
-        prisma.quotation.count({ where: { createdAt: dateFilter } }),
-        prisma.quotation.count({ where: { status: 'Sent', createdAt: dateFilter } })
+        prisma.lead.count({ where: { assignedTo: { in: teamIds }, createdAt: dateFilter } }),
+        prisma.lead.count({ where: { assignedTo: { in: teamIds }, status: { in: ['New', 'Contacted', 'Qualified', 'Proposal', 'Negotiation'] }, createdAt: dateFilter } }),
+        prisma.lead.count({ where: { assignedTo: { in: teamIds }, status: 'Won', createdAt: dateFilter } }),
+        prisma.lead.count({ where: { assignedTo: { in: teamIds }, status: 'Lost', createdAt: dateFilter } }),
+        prisma.followUp.count({ where: { assignedTo: { in: teamIds }, status: 'pending', createdAt: dateFilter } }),
+        prisma.followUp.count({ where: { assignedTo: { in: teamIds }, isOverdue: true, createdAt: dateFilter } }),
+        prisma.quotation.count({ where: { createdBy: { in: teamIds }, createdAt: dateFilter } }),
+        prisma.quotation.count({ where: { createdBy: { in: teamIds }, status: 'Sent', createdAt: dateFilter } })
       ])
 
       const pipeline = await prisma.lead.groupBy({
         by: ['status'],
-        where: { createdAt: dateFilter },
+        where: { assignedTo: { in: teamIds }, createdAt: dateFilter },
         _count: { _all: true }
       })
 
       return NextResponse.json({
         view: 'manager',
+        team_size: teamIds.length,
         total_leads: totalLeads,
         active_leads: activeLeads,
         won_leads: wonLeads,
@@ -112,6 +120,7 @@ export async function GET(req: NextRequest) {
         pipeline: pipeline.map(p => ({ status: p.status, count: p._count._all }))
       })
     }
+
 
     // ── Admin view ─────────────────────────────────
     const [

@@ -1,9 +1,12 @@
 "use client"
+import React from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/lib/supabase'
 
 export default function Header() {
   const router = useRouter()
+  const { user } = useAuth()
 
   const handleLogout = async () => {
     try {
@@ -36,10 +39,10 @@ export default function Header() {
         <div className="h-8 w-px bg-gray-200 mx-1 hidden md:block"></div>
         <div className="flex items-center gap-2 md:gap-4">
           <button className="flex items-center gap-2 p-1 pr-3 hover:bg-gray-100 rounded-full transition-colors">
-            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white">
-              👤
+            <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-white">
+              {user?.fullName?.charAt(0) || '👤'}
             </div>
-            <span className="text-sm font-medium text-gray-700 hidden sm:inline">Admin</span>
+            <span className="text-sm font-medium text-gray-700 hidden sm:inline">{user?.fullName || 'User'}</span>
           </button>
           <button 
             onClick={handleLogout}

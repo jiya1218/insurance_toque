@@ -44,8 +44,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(accessToken)
 
     try {
+      // Small delay to ensure session is fully propagated
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
       const response = await fetch('/api/v1/auth/me', {
-        headers: { 'Authorization': `Bearer ${accessToken}` }
+        headers: { 'Authorization': `Bearer ${accessToken}` },
+        cache: 'no-store'
       })
       
       if (response.ok) {
@@ -55,21 +59,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           permissions: data.role?.permissions?.map((p: any) => p.name) || []
         })
       } else {
-        // FALLBACK FOR MOBILE: If API fails, use basic session info
-        // This prevents the login loop on mobile devices
+        const errorData = await response.json().catch(() => ({}))
+        if (response.status !== 403) {
+          console.error('[auth-me] API Error:', response.status, errorData)
+        }
+        
+        // FALLBACK: If API fails, use basic session info
         setUser({
           id: session.user.id,
           email: session.user.email,
-          fullName: session.user.user_metadata?.full_name || 'Admin User',
-          permissions: [] // Basic access
+          fullName: session.user.user_metadata?.full_name || 'Team Member',
+          permissions: []
         })
       }
-    } catch (error) {
-      console.error('Failed to fetch profile, using fallback:', error)
+    } catch (error: any) {
+      console.error('Failed to fetch profile:', error?.message || error)
+      // Fallback for mobile or network interruptions
       setUser({
         id: session.user.id,
         email: session.user.email,
-        fullName: session.user.user_metadata?.full_name || 'Admin User',
+        fullName: session.user.user_metadata?.full_name || 'Team Member',
         permissions: []
       })
     } finally {

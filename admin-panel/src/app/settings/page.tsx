@@ -172,7 +172,7 @@ export default function SettingsPage() {
                       </div>
                       <input 
                         type="text" 
-                        value={user?.role?.name || 'Super Admin'}
+                        value={user?.role?.name || 'ADMIN'}
                         disabled
                         className="w-full pl-10 pr-4 py-3 bg-gray-100 border-none rounded-xl text-sm text-gray-500 cursor-not-allowed"
                       />

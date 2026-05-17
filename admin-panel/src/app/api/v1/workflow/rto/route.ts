@@ -3,18 +3,32 @@ import prisma from '@/lib/prisma'
 import { validateAuth } from '@/lib/auth-guard'
 
 export async function GET(req: NextRequest) {
-  const { error } = await validateAuth(req, 'rto.view')
-  if (error) return error
+    const { context, error } = await validateAuth(req, 'rto.view')
+    if (error) return error
 
-  try {
-    const rto = await prisma.rTOWork.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: { 
-        lead: { select: { clientName: true } },
-        assignee: { select: { fullName: true } }
+    try {
+      const where: any = {}
+      
+      if (context && context.role === 'EXECUTIVE') {
+        where.assignedTo = context.userId
+      } else if (context && context.role === 'MANAGER') {
+        const team = await prisma.user.findMany({
+          where: { managerId: context.userId },
+          select: { id: true }
+        })
+        const teamIds = team.map(t => t.id)
+        where.assignedTo = { in: [context.userId, ...teamIds] }
       }
-    })
-    return NextResponse.json(rto)
+
+      const rto = await prisma.rTOWork.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        include: { 
+          lead: { select: { clientName: true } },
+          assignee: { select: { fullName: true } }
+        }
+      })
+      return NextResponse.json(rto)
   } catch (error) {
     console.error('RTO GET Error:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

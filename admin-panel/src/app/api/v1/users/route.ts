@@ -12,15 +12,26 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50')
     const skip = parseInt(searchParams.get('skip') || '0')
 
+    const isManager = context?.role?.toUpperCase() === 'MANAGER'
+    const where: any = {}
+    
+    // If user is a manager, only show their team
+    if (isManager) {
+      where.managerId = context.userId
+    }
+
     const users = await prisma.user.findMany({
+      where,
       take: limit,
       skip: skip,
       orderBy: { fullName: 'asc' },
       include: {
         role: { select: { id: true, name: true } },
+        manager: { select: { id: true, fullName: true } },
         permissions: { select: { id: true, name: true } }
       }
     })
+
 
     return NextResponse.json(users)
   } catch (error) {
@@ -36,13 +47,27 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const { 
-      fullName, email, password, roleId, extraPermissionIds,
+      fullName, email, password, roleId, managerId, extraPermissionIds,
       highestQualification, dateOfBirth, joiningDate, personalMobile, homeMobile
     } = body
 
     if (!fullName || !email || !password) {
       return NextResponse.json({ error: 'fullName, email, and password are required' }, { status: 400 })
     }
+
+    const isManager = context?.role?.toUpperCase() === 'MANAGER'
+    let finalRoleId = roleId
+    let finalIsActive = true // Admins create active users by default
+
+    if (isManager) {
+      // 1. Managers can ONLY create Executives
+      const executiveRole = await prisma.role.findFirst({ where: { name: 'EXECUTIVE' } })
+      finalRoleId = executiveRole?.id || roleId
+      // 2. Managers create INACTIVE users (Pending Admin Approval)
+      finalIsActive = false
+    }
+
+    const finalManagerId = isManager ? context.userId : (managerId || null)
 
     // 1. Create user in Supabase Auth (so they can log in)
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -62,8 +87,9 @@ export async function POST(req: NextRequest) {
         id: authData.user.id,
         email,
         fullName,
-        roleId: roleId || null,
-        isActive: true,
+        roleId: finalRoleId || null,
+        managerId: finalManagerId,
+        isActive: finalIsActive,
         highestQualification,
         dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
         joiningDate: joiningDate ? new Date(joiningDate) : null,
@@ -75,9 +101,11 @@ export async function POST(req: NextRequest) {
       },
       include: {
         role: { select: { id: true, name: true } },
+        manager: { select: { id: true, fullName: true } },
         permissions: { select: { id: true, name: true } }
       }
     })
+
 
     return NextResponse.json(user)
   } catch (error: any) {

@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 
-export async function fetchApi(path: string, options: RequestInit = {}) {
+export async function fetchApi(path: string, options: RequestInit = {}, retries = 3) {
   const { data: { session } } = await supabase.auth.getSession()
   
   const headers: Record<string, string> = {
@@ -12,15 +12,23 @@ export async function fetchApi(path: string, options: RequestInit = {}) {
     headers['Content-Type'] = 'application/json'
   }
 
-  const res = await fetch(path, {
-    ...options,
-    headers,
-  })
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(path, {
+        ...options,
+        headers,
+      })
 
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ error: 'An unknown error occurred' }))
-    throw new Error(error.error || `HTTP error! status: ${res.status}`)
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ error: 'An unknown error occurred' }))
+        throw new Error(error.error || `HTTP error! status: ${res.status}`)
+      }
+
+      return res.json()
+    } catch (err: any) {
+      if (i === retries - 1) throw err
+      console.warn(`[api] Fetch failed, retrying (${i + 1}/${retries})...`, err.message)
+      await new Promise(resolve => setTimeout(resolve, 500 * (i + 1)))
+    }
   }
-
-  return res.json()
 }

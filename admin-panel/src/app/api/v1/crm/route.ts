@@ -14,14 +14,30 @@ export async function GET(req: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'createdAt'
     const order = searchParams.get('order') || 'desc'
 
+    const where: any = {}
+    
+    // RBAC: Dynamic filtering based on role via associated lead
+    if (context && context.role === 'EXECUTIVE') {
+      where.lead = { assignedTo: context.userId }
+    } else if (context && context.role === 'MANAGER') {
+      const team = await prisma.user.findMany({
+        where: { managerId: context.userId },
+        select: { id: true }
+      })
+      const teamIds = team.map(t => t.id)
+      where.lead = { assignedTo: { in: [context.userId, ...teamIds] } }
+    }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } }
+      ]
+    }
+
     const customers = await prisma.customer.findMany({
-      where: search ? {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' } },
-          { phone: { contains: search, mode: 'insensitive' } },
-          { email: { contains: search, mode: 'insensitive' } }
-        ]
-      } : undefined,
+      where,
       orderBy: { [sortBy]: order },
       include: {
         visits: { orderBy: { scheduledAt: 'desc' }, take: 3 }

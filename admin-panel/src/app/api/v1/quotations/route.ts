@@ -3,17 +3,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
 export async function POST(req: NextRequest) {
-  const { error } = await validateAuth(req)
+  const { context, error } = await validateAuth(req, 'quotations.create')
   if (error) return error
 
   try {
     const body = await req.json()
+    const role = context!.role
+    const userId = context!.userId
+
     const quotation = await prisma.quotation.create({
       data: {
         leadId: body.lead_id,
-        createdBy: body.created_by,
+        createdBy: userId,
         amount: body.amount,
-        status: body.status || 'Draft',
+        status: role === 'EXECUTIVE' ? 'Approval Pending' : (body.status || 'Draft'),
         details: body.details || {}
       }
     })
@@ -25,7 +28,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const { error } = await validateAuth(req)
+  const { context, error } = await validateAuth(req)
   if (error) return error
 
   try {
@@ -35,11 +38,24 @@ export async function GET(req: NextRequest) {
     const where: any = {}
     if (leadId) where.leadId = leadId
 
+    // RBAC: Dynamic filtering based on role
+    if (context && context.role === 'EXECUTIVE') {
+      where.createdBy = context.userId
+    } else if (context && context.role === 'MANAGER') {
+      const team = await prisma.user.findMany({
+        where: { managerId: context.userId },
+        select: { id: true }
+      })
+      const teamIds = team.map(t => t.id)
+      where.createdBy = { in: [context.userId, ...teamIds] }
+    }
+
     const quotations = await prisma.quotation.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       include: {
-        lead: { select: { clientName: true } }
+        lead: { select: { clientName: true } },
+        creator: { select: { fullName: true } }
       }
     })
 
@@ -49,3 +65,4 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
+

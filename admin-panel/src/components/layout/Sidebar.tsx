@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
+import { supabase } from '@/lib/supabase'
 
 const MENU_GROUPS = [
   {
@@ -32,7 +34,7 @@ const MENU_GROUPS = [
     ]
   },
   {
-    label: 'ADMIN',
+    label: 'MANAGEMENT',
     items: [
       { name: 'Users', href: '/users' },
       { name: 'Roles & Permissions', href: '/roles' },
@@ -48,9 +50,36 @@ const MENU_GROUPS = [
 export default function Sidebar() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const { user } = useAuth()
 
   // Close sidebar on route change (mobile)
   useEffect(() => { setOpen(false) }, [pathname])
+
+  const role = (user?.role?.name || 'EXECUTIVE').toUpperCase()
+
+  const filteredGroups = MENU_GROUPS.map(group => {
+    let items = group.items
+
+    if (role === 'EXECUTIVE') {
+      // Hide most admin and oversight items for Executives
+      if (group.label === 'MANAGEMENT') return null
+      if (group.label === 'OPERATIONS') {
+        items = items.filter(i => ['Claims', 'Loans'].includes(i.name))
+      }
+      items = items.filter(i => !['CRM', 'Reports'].includes(i.name))
+    } else if (role === 'MANAGER') {
+      // Strict role-based filtering for Managers
+      if (group.label === 'OPERATIONS') return null
+      if (group.label === 'SALES') {
+        items = items.filter(i => ['Leads', 'CRM', 'Quotations', 'Follow-ups'].includes(i.name))
+      }
+      if (group.label === 'MANAGEMENT') {
+        items = items.filter(i => ['Users', 'Settings'].includes(i.name))
+      }
+    }
+
+    return { ...group, items }
+  }).filter(Boolean) as typeof MENU_GROUPS
 
   return (
     <>
@@ -88,7 +117,7 @@ export default function Sidebar() {
         </div>
 
         <nav className="flex-1 px-3 py-4 overflow-y-auto custom-scrollbar space-y-5">
-          {MENU_GROUPS.map((group) => (
+          {filteredGroups.map((group) => (
             <div key={group.label}>
               <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
                 {group.label}
@@ -101,8 +130,8 @@ export default function Sidebar() {
                     href={item.href}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all mb-0.5 ${
                       isActive 
-                        ? 'bg-brand-primary text-white shadow-lg shadow-red-200' 
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-brand-primary'
+                        ? 'bg-red-600 text-white shadow-lg shadow-red-200' 
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-red-600'
                     }`}
                   >
                     {item.name}
@@ -114,7 +143,15 @@ export default function Sidebar() {
         </nav>
 
         <div className="p-4 border-t border-gray-100">
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-xl transition-all">
+          <div className="px-4 py-3 mb-2">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Logged in as</p>
+            <p className="text-xs font-bold text-gray-700 truncate">{user?.fullName || 'User'}</p>
+            <p className="text-[10px] font-medium text-red-600 uppercase">{role}</p>
+          </div>
+          <button 
+            onClick={() => supabase.auth.signOut().then(() => window.location.href = '/login')}
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-xl transition-all"
+          >
             Logout
           </button>
         </div>

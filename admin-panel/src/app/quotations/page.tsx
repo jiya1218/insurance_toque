@@ -70,6 +70,19 @@ export default function QuotationsPage() {
     }
   }
 
+  const handleApprove = async (id: string, approve: boolean) => {
+    try {
+      await fetchApi(`/api/v1/quotations/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: approve ? 'Approved' : 'Rejected' })
+      })
+      fetchQuotes()
+      alert(approve ? 'Quotation approved!' : 'Quotation rejected.')
+    } catch (error: any) {
+      alert(error.message || 'Failed to update quotation')
+    }
+  }
+
   const filteredQuotes = quotes.filter(q => 
     q.lead?.clientName?.toLowerCase().includes(search.toLowerCase()) ||
     q.id.toLowerCase().includes(search.toLowerCase())
@@ -109,7 +122,7 @@ export default function QuotationsPage() {
           <thead>
             <tr className="bg-gray-50/50">
               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">ID / Date</th>
-              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Lead Name</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Lead / Agent</th>
               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Amount</th>
               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Status</th>
               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">Actions</th>
@@ -126,23 +139,44 @@ export default function QuotationsPage() {
                   <div className="text-sm font-bold text-gray-900">#{quote.id.slice(0, 8)}</div>
                   <div className="text-[10px] text-gray-400">{new Date(quote.createdAt).toLocaleDateString()}</div>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-600">{quote.lead?.clientName || 'N/A'}</td>
+                <td className="px-6 py-4">
+                  <div className="text-sm font-bold text-gray-700">{quote.lead?.clientName || 'N/A'}</div>
+                  <div className="text-[10px] text-gray-400 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
+                    By {quote.creator?.fullName || 'System'}
+                  </div>
+                </td>
                 <td className="px-6 py-4 text-sm font-bold text-gray-900">₹{parseFloat(quote.amount).toLocaleString()}</td>
                 <td className="px-6 py-4">
-                  <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${
-                    quote.status === 'Sent' ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'
+                  <span className={`px-2.5 py-1 rounded-lg text-xs font-bold uppercase ${
+                    quote.status === 'Approved' ? 'bg-green-50 text-green-700' : 
+                    quote.status === 'Approval Pending' ? 'bg-amber-50 text-amber-700' :
+                    quote.status === 'Rejected' ? 'bg-red-50 text-red-700' :
+                    'bg-blue-50 text-blue-700'
                   }`}>
                     {quote.status}
                   </span>
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center justify-end gap-2">
+                    {quote.status === 'Approval Pending' && (
+                      <div className="flex gap-1 mr-2 border-r pr-2 border-gray-100">
+                        <button 
+                          onClick={() => handleApprove(quote.id, true)}
+                          className="px-3 py-1 bg-green-600 text-white text-[10px] font-bold rounded-lg hover:bg-green-700 transition-all"
+                        >Approve</button>
+                        <button 
+                          onClick={() => handleApprove(quote.id, false)}
+                          className="px-3 py-1 bg-red-50 text-red-600 text-[10px] font-bold rounded-lg hover:bg-red-100 transition-all"
+                        >Reject</button>
+                      </div>
+                    )}
                     <button 
                       onClick={() => handleShare(quote.id)}
-                      className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-all flex items-center gap-1 text-xs font-bold"
+                      className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-all"
+                      title="WhatsApp Share"
                     >
                       <MessageCircle size={18} />
-                      WhatsApp
                     </button>
                     <button 
                       onClick={() => window.open(`/api/v1/quotations/${quote.id}/pdf`, '_blank')}
@@ -157,6 +191,7 @@ export default function QuotationsPage() {
           </tbody>
         </table>
       </div>
+
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">

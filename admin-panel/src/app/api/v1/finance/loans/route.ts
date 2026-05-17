@@ -3,18 +3,31 @@ import prisma from '@/lib/prisma'
 import { validateAuth } from '@/lib/auth-guard'
 
 export async function GET(req: NextRequest) {
-  const { error } = await validateAuth(req, 'loan.view')
-  if (error) return error
+    const { context, error } = await validateAuth(req, 'loan.view')
+    if (error) return error
 
-  try {
-    const { searchParams } = new URL(req.url)
-    const status = searchParams.get('status')
-    
-    const where: any = {}
-    if (status && status !== 'all') where.status = status
+    try {
+      const { searchParams } = new URL(req.url)
+      const status = searchParams.get('status')
+      
+      const where: any = {}
 
-    const loans = await prisma.loan.findMany({
-      where,
+      // RBAC: Dynamic filtering based on role
+      if (context && context.role === 'EXECUTIVE') {
+        where.assignedTo = context.userId
+      } else if (context && context.role === 'MANAGER') {
+        const team = await prisma.user.findMany({
+          where: { managerId: context.userId },
+          select: { id: true }
+        })
+        const teamIds = team.map(t => t.id)
+        where.assignedTo = { in: [context.userId, ...teamIds] }
+      }
+
+      if (status && status !== 'all') where.status = status
+
+      const loans = await prisma.loan.findMany({
+        where,
       orderBy: { createdAt: 'desc' },
       include: {
         lead: { select: { clientName: true } },
